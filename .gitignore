@@ -1,0 +1,10 @@
+node_modules/
+.env
+.env.*
+ops/dsm/nas-linker.env
+*.log
+.DS_Store
+data/*.sqlite
+data/*.sqlite-*
+.run/
+discussion.md

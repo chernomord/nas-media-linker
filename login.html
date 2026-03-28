@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Synology linker login</title>
+  <link rel="stylesheet" href="/assets/app/app.css"/>
+  <style>
+    html {
+      box-sizing: border-box;
+    }
+    *, *::before, *::after {
+      box-sizing: inherit;
+    }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      font-family: "Avenir Next", "SF Pro Display", "Segoe UI", ui-sans-serif, system-ui;
+      background:
+        radial-gradient(1400px 900px at 15% 20%, rgba(124, 58, 237, 0.35), transparent 60%),
+        radial-gradient(1100px 800px at 80% 75%, rgba(59, 130, 246, 0.28), transparent 60%),
+        radial-gradient(900px 700px at 60% 10%, rgba(244, 114, 182, 0.18), transparent 55%),
+        linear-gradient(180deg, #0b1020 0%, #15112a 55%, #1b1233 100%);
+      color: #e2e8f0;
+    }
+    .login-shell {
+      max-width: 28rem;
+      margin: 0 auto;
+      padding: 4rem 1.25rem;
+    }
+    .login-card {
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
+      color: #0f172a;
+      padding: 1.25rem;
+    }
+    .login-meta {
+      color: #cbd5f5;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+    }
+    .login-title {
+      font-size: clamp(2rem, 5vw, 3rem);
+      line-height: 1;
+      font-weight: 600;
+      margin: 0 0 1.5rem;
+      color: #f8fafc;
+    }
+    .login-form {
+      display: grid;
+      gap: 0.875rem;
+      margin-top: 1rem;
+    }
+    .login-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: #64748b;
+    }
+    .login-input {
+      width: 100%;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 0.75rem 0.875rem;
+      font: inherit;
+      background: #fff;
+      color: #0f172a;
+    }
+    .login-input:focus {
+      outline: none;
+      border-color: #93c5fd;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+    .login-button {
+      appearance: none;
+      border: 0;
+      border-radius: 10px;
+      background: #2563eb;
+      color: white;
+      font: inherit;
+      font-weight: 600;
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+    }
+    .login-button:disabled {
+      opacity: 0.7;
+      cursor: wait;
+    }
+    .login-error {
+      display: none;
+      border-radius: 12px;
+      background: #fff1f2;
+      border: 1px solid #fecdd3;
+      color: #9f1239;
+      padding: 0.75rem 0.875rem;
+      font-size: 0.875rem;
+    }
+    .login-error.visible {
+      display: block;
+    }
+    .login-note {
+      margin-top: 1rem;
+      color: #64748b;
+      font-size: 0.875rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="login-shell">
+    <div class="login-meta">Synology linker</div>
+    <h1 class="login-title">Sign in to continue</h1>
+
+    <section class="login-card" aria-label="Login form">
+      <p class="text-sm text-slate-600">This helper now uses an app-managed session instead of browser-native Basic Auth.</p>
+      <form id="login_form" class="login-form">
+        <div>
+          <div class="login-label">Username</div>
+          <input id="login_username" name="username" class="login-input" autocomplete="username" required/>
+        </div>
+        <div>
+          <div class="login-label">Password</div>
+          <input id="login_password" name="password" type="password" class="login-input" autocomplete="current-password" required/>
+        </div>
+        <div id="login_error" class="login-error" role="alert"></div>
+        <button id="login_submit" class="login-button" type="submit">Sign in</button>
+      </form>
+      <p class="login-note">Session is stored only in helper memory and is lost on logout, timeout, or helper restart.</p>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById("login_form");
+    const submit = document.getElementById("login_submit");
+    const errorBox = document.getElementById("login_error");
+
+    function setError(message) {
+      if (!message) {
+        errorBox.textContent = "";
+        errorBox.classList.remove("visible");
+        return;
+      }
+      errorBox.textContent = message;
+      errorBox.classList.add("visible");
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      setError("");
+      submit.disabled = true;
+
+      const username = document.getElementById("login_username").value.trim();
+      const password = document.getElementById("login_password").value;
+
+      try {
+        const resp = await fetch("/api/session/login", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({ username, password }),
+        });
+        const data = await resp.json().catch(() => ({}));
+        if (!resp.ok || data.ok === false) {
+          setError(data.error || `HTTP ${resp.status}`);
+          submit.disabled = false;
+          return;
+        }
+        window.location.replace("/");
+      } catch {
+        setError("Login request failed");
+        submit.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
