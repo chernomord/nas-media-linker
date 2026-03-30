@@ -21,23 +21,12 @@ async function makeFixture() {
   return {
     base,
     roots,
-    executor: createExecutor({
-      mode: "node",
-      scriptPath: "/tmp/ignored",
-      roots,
-    }),
+    executor: createExecutor({ roots }),
   };
 }
 
-test("bash executor requires SSH config", () => {
-  assert.throws(
-    () => createExecutor({ mode: "bash", scriptPath: "/tmp/ignored", ssh: {} }),
-    /requires ssh\.host, ssh\.username and ssh\.privateKeyPath/,
-  );
-});
-
-test("node executor initializes without SSH config", () => {
-  assert.doesNotThrow(() => createExecutor({ mode: "node", scriptPath: "/tmp/ignored" }));
+test("executor initializes with default config", () => {
+  assert.doesNotThrow(() => createExecutor());
 });
 
 test("listDir returns sorted items with stable shape", async () => {

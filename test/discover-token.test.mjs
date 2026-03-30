@@ -100,7 +100,6 @@ test("configured Plex discover token is used server-side but not leaked to deliv
       ...process.env,
       PLEX_DISCOVER_URL: "https://discover.example.test",
       PLEX_DISCOVER_TOKEN: token,
-      EXECUTOR_MODE: "node",
     },
     encoding: "utf8",
   });

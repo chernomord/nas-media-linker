@@ -75,7 +75,7 @@ function stopChild(child) {
   });
 }
 
-test("helper starts in node mode without SSH rollback env", async () => {
+test("helper starts without executor-specific env", async () => {
   const base = await mkdtemp(path.join(os.tmpdir(), "nas-linker-node-mode-"));
   const stdoutChunks = [];
   const stderrChunks = [];
@@ -83,7 +83,6 @@ test("helper starts in node mode without SSH rollback env", async () => {
     cwd: REPO_ROOT,
     env: {
       ...process.env,
-      EXECUTOR_MODE: "node",
       PORT: "0",
       UX_STATE_DB_PATH: path.join(base, "ux-state.sqlite"),
     },
@@ -101,38 +100,12 @@ test("helper starts in node mode without SSH rollback env", async () => {
   }
 });
 
-test("helper fails fast in bash mode without SSH rollback env", async () => {
-  const base = await mkdtemp(path.join(os.tmpdir(), "nas-linker-bash-mode-"));
-  const child = spawn(process.execPath, ["--experimental-sqlite", SERVER_PATH], {
-    cwd: REPO_ROOT,
-    env: {
-      ...process.env,
-      EXECUTOR_MODE: "bash",
-      PORT: "0",
-      UX_STATE_DB_PATH: path.join(base, "ux-state.sqlite"),
-      NAS_HOST: "",
-      NAS_USER: "",
-      NAS_KEY_PATH: "",
-    },
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-
-  try {
-    const exited = await waitForExit(child);
-    assert.notEqual(exited.code, 0);
-    assert.match(exited.stderr + exited.stdout, /Need env for EXECUTOR_MODE=bash: NAS_HOST, NAS_USER, NAS_KEY_PATH/);
-  } finally {
-    await rm(base, { recursive: true, force: true });
-  }
-});
-
 test("helper fails fast with invalid PORT value", async () => {
   const base = await mkdtemp(path.join(os.tmpdir(), "nas-linker-bad-port-"));
   const child = spawn(process.execPath, ["--experimental-sqlite", SERVER_PATH], {
     cwd: REPO_ROOT,
     env: {
       ...process.env,
-      EXECUTOR_MODE: "node",
       PORT: "70000",
       UX_STATE_DB_PATH: path.join(base, "ux-state.sqlite"),
     },
@@ -143,32 +116,6 @@ test("helper fails fast with invalid PORT value", async () => {
     const exited = await waitForExit(child);
     assert.notEqual(exited.code, 0);
     assert.match(exited.stderr + exited.stdout, /PORT must be an integer between 0 and 65535, got: 70000/);
-  } finally {
-    await rm(base, { recursive: true, force: true });
-  }
-});
-
-test("helper fails fast in bash mode when NAS_KEY_PATH does not exist", async () => {
-  const base = await mkdtemp(path.join(os.tmpdir(), "nas-linker-bad-key-"));
-  const missingKeyPath = path.join(base, "missing.key");
-  const child = spawn(process.execPath, ["--experimental-sqlite", SERVER_PATH], {
-    cwd: REPO_ROOT,
-    env: {
-      ...process.env,
-      EXECUTOR_MODE: "bash",
-      PORT: "0",
-      UX_STATE_DB_PATH: path.join(base, "ux-state.sqlite"),
-      NAS_HOST: "127.0.0.1",
-      NAS_USER: "rollback-user",
-      NAS_KEY_PATH: missingKeyPath,
-    },
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-
-  try {
-    const exited = await waitForExit(child);
-    assert.notEqual(exited.code, 0);
-    assert.ok((exited.stderr + exited.stdout).includes(`NAS_KEY_PATH does not exist: ${missingKeyPath}`));
   } finally {
     await rm(base, { recursive: true, force: true });
   }

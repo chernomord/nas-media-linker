@@ -70,7 +70,7 @@ export function startServer({
       address && typeof address === "object" && "port" in address
         ? address.port
         : port;
-    console.log(`Open: http://127.0.0.1:${listenPort} (executor=${runtimeConfig.executorMode})`);
+    console.log(`Open: http://127.0.0.1:${listenPort} (executor=node)`);
   });
 
   return server;

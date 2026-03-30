@@ -613,49 +613,6 @@ test("list endpoint returns frozen executor-error shape", async () => {
   });
 });
 
-test("list endpoint uses bash rollback executor path when configured", async () => {
-  let observedCommand = null;
-  const executor = createExecutor({
-    mode: "bash",
-    scriptPath: "/volume1/scripts/linkmedia.sh",
-    sshExecOverride: async (command) => {
-      observedCommand = command;
-      return {
-        code: 0,
-        stdout: "d|Show Folder|-|2026-03-28 20:00:00.000000000 +0300\n",
-        stderr: "",
-      };
-    },
-  });
-
-  const app = createApp({
-    runToken: "test-token",
-    executor,
-    savedTemplatesStore: makeSavedTemplatesStore(),
-  });
-
-  await withServer(app, async (baseUrl) => {
-    const resp = await fetch(`${baseUrl}/api/list`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        ...authHeaders({ runToken: "test-token" }),
-      },
-      body: JSON.stringify({ dir: TORRENTS_ROOT }),
-    });
-    assert.equal(resp.status, 200);
-    assert.deepEqual(await resp.json(), {
-      ok: true,
-      dir: TORRENTS_ROOT,
-      items: [{ type: "d", name: "Show Folder", size: "-", mtime: "2026-03-28 20:00:00.000000000 +0300" }],
-    });
-    assert.equal(
-      observedCommand,
-      "/bin/bash '/volume1/scripts/linkmedia.sh' listdir '/volume1/Movies/Torrents'",
-    );
-  });
-});
-
 test("list endpoint rejects disallowed root with frozen error shape", async () => {
   const app = createApp({
     runToken: "test-token",
@@ -712,10 +669,7 @@ test("list endpoint rejects sibling path that only shares allowed-root prefix", 
 test("list endpoint returns executor-error shape for nested traversal under allowed root", async () => {
   const app = createApp({
     runToken: "test-token",
-    executor: createExecutor({
-      mode: "node",
-      scriptPath: "/volume1/scripts/linkmedia.sh",
-    }),
+    executor: createExecutor(),
     savedTemplatesStore: makeSavedTemplatesStore(),
   });
 
@@ -778,10 +732,7 @@ test("list endpoint accepts printable Unicode path under allowed root", async ()
 test("list endpoint returns executor-error shape for control characters under allowed root", async () => {
   const app = createApp({
     runToken: "test-token",
-    executor: createExecutor({
-      mode: "node",
-      scriptPath: "/volume1/scripts/linkmedia.sh",
-    }),
+    executor: createExecutor(),
     savedTemplatesStore: makeSavedTemplatesStore(),
   });
 
@@ -835,54 +786,6 @@ test("movie endpoint returns frozen success shape", async () => {
       stdout: "linked\n",
       stderr: "",
     });
-  });
-});
-
-test("movie endpoint uses bash rollback executor path when configured", async () => {
-  let observedCommand = null;
-  const executor = createExecutor({
-    mode: "bash",
-    scriptPath: "/volume1/scripts/linkmedia.sh",
-    sshExecOverride: async (command) => {
-      observedCommand = command;
-      return {
-        code: 0,
-        stdout: "linked\n",
-        stderr: "",
-      };
-    },
-  });
-
-  const app = createApp({
-    runToken: "test-token",
-    executor,
-    savedTemplatesStore: makeSavedTemplatesStore(),
-  });
-
-  await withServer(app, async (baseUrl) => {
-    const resp = await fetch(`${baseUrl}/api/link/movie`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        ...authHeaders({ runToken: "test-token" }),
-      },
-      body: JSON.stringify({
-        src: `${TORRENTS_ROOT}/Movie Folder/file name.mkv`,
-        title: "Movie Title",
-        year: "2024",
-      }),
-    });
-    assert.equal(resp.status, 200);
-    assert.deepEqual(await resp.json(), {
-      ok: true,
-      code: 0,
-      stdout: "linked\n",
-      stderr: "",
-    });
-    assert.equal(
-      observedCommand,
-      "/bin/bash '/volume1/scripts/linkmedia.sh' linkmovie '/volume1/Movies/Torrents/Movie Folder/file name.mkv' 'Movie Title' '2024'",
-    );
   });
 });
 
@@ -1001,10 +904,7 @@ test("movie endpoint accepts printable Unicode path under torrents root", async 
 test("movie endpoint returns executor-error shape for control characters under torrents root", async () => {
   const app = createApp({
     runToken: "test-token",
-    executor: createExecutor({
-      mode: "node",
-      scriptPath: "/volume1/scripts/linkmedia.sh",
-    }),
+    executor: createExecutor(),
     savedTemplatesStore: makeSavedTemplatesStore(),
   });
 
@@ -1065,55 +965,6 @@ test("season endpoint returns frozen success shape", async () => {
       stdout: "season-linked\n",
       stderr: "",
     });
-  });
-});
-
-test("season endpoint uses bash rollback executor path when configured", async () => {
-  let observedCommand = null;
-  const executor = createExecutor({
-    mode: "bash",
-    scriptPath: "/volume1/scripts/linkmedia.sh",
-    sshExecOverride: async (command) => {
-      observedCommand = command;
-      return {
-        code: 0,
-        stdout: "season-linked\n",
-        stderr: "",
-      };
-    },
-  });
-
-  const app = createApp({
-    runToken: "test-token",
-    executor,
-    savedTemplatesStore: makeSavedTemplatesStore(),
-  });
-
-  await withServer(app, async (baseUrl) => {
-    const resp = await fetch(`${baseUrl}/api/link/season`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        ...authHeaders({ runToken: "test-token" }),
-      },
-      body: JSON.stringify({
-        srcDir: `${TORRENTS_ROOT}/Show Folder`,
-        title: "Show Title",
-        season: "2",
-        year: "2024",
-      }),
-    });
-    assert.equal(resp.status, 200);
-    assert.deepEqual(await resp.json(), {
-      ok: true,
-      code: 0,
-      stdout: "season-linked\n",
-      stderr: "",
-    });
-    assert.equal(
-      observedCommand,
-      "/bin/bash '/volume1/scripts/linkmedia.sh' linkseason '/volume1/Movies/Torrents/Show Folder' 'Show Title' '2' '2024'",
-    );
   });
 });
 
@@ -1236,10 +1087,7 @@ test("season endpoint accepts printable Unicode path under torrents root", async
 test("season endpoint returns executor-error shape for control characters under torrents root", async () => {
   const app = createApp({
     runToken: "test-token",
-    executor: createExecutor({
-      mode: "node",
-      scriptPath: "/volume1/scripts/linkmedia.sh",
-    }),
+    executor: createExecutor(),
     savedTemplatesStore: makeSavedTemplatesStore(),
   });
 

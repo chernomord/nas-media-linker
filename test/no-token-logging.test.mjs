@@ -66,7 +66,6 @@ test("helper startup logs do not contain runtime token or discover token", async
     cwd: REPO_ROOT,
     env: {
       ...process.env,
-      EXECUTOR_MODE: "node",
       PORT: "0",
       UX_STATE_DB_PATH: path.join(base, "ux-state.sqlite"),
       PLEX_DISCOVER_URL: "https://discover.example.test",

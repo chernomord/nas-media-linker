@@ -5,7 +5,6 @@ Helper service for turning torrent folders on a Synology NAS into deterministic 
 The tool serves a browser UI, validates paths on the server, and executes link operations on the NAS. In the current baseline:
 
 - primary execution path is local Node.js on the NAS
-- SSH + `linkmedia.sh` remain as a rollback path
 - authentication is app-managed login/session plus a runtime request-binding token
 - saved templates are low-sensitivity UX state stored in sqlite
 
@@ -28,8 +27,7 @@ The tool serves a browser UI, validates paths on the server, and executes link o
 
 - Browser UI -> Express helper
 - Helper validates requests and enforces auth
-- Helper executes linker logic locally on NAS in `EXECUTOR_MODE=node`
-- Optional rollback mode executes the existing bash script through SSH
+- Helper executes linker logic locally on NAS through the built-in Node executor
 
 ## Security / Scope Notes
 
@@ -79,7 +77,6 @@ node --experimental-sqlite server.mjs
 Notes:
 
 - this is a debug/preview path, not the canonical deployment model
-- with `EXECUTOR_MODE=node` (default), startup does not require rollback-only SSH env
 - auth is disabled unless `APP_AUTH_USER` and `APP_AUTH_PASSWORD_HASH` are set together
 - metadata search and real NAS operations may still be unavailable or only partially representative without the corresponding env/path setup
 - rebuild UI assets with `npm run build:ui` after frontend changes that affect the served bundle
@@ -127,19 +124,11 @@ High-level flow:
 
 ## Minimal Env Surface
 
-Primary path:
+Primary env:
 
-- `EXECUTOR_MODE=node`
 - `APP_AUTH_USER`
 - `APP_AUTH_PASSWORD_HASH`
 - `UX_STATE_DB_PATH` (optional; defaults under `data/ux-state.sqlite`)
-
-Rollback-only path:
-
-- `NAS_HOST`
-- `NAS_USER`
-- `NAS_KEY_PATH`
-- `NAS_SCRIPT`
 
 Optional metadata search:
 
@@ -205,7 +194,7 @@ Metadata search is optional. Core linking and folder browsing work without it.
 - [`src/server/routes/`](./src/server/routes) - route modules split by session, linking, metadata, saved templates, and shell
 - [`src/server/metadata/`](./src/server/metadata) - Plex Discover and OMDb metadata helpers
 - [`src/server/ui/`](./src/server/ui) - HTML shell loading and token/template injection
-- [`src/core/executor.mjs`](./src/core/executor.mjs) - primary Node executor and bash rollback integration
+- [`src/core/executor.mjs`](./src/core/executor.mjs) - primary Node executor and path guardrails
 - [`src/core/saved-templates-store.mjs`](./src/core/saved-templates-store.mjs) - sqlite-backed saved-template storage
 - [`src/templates/app-shell.html`](./src/templates/app-shell.html) - authenticated app shell template
 - [`src/templates/login-shell.html`](./src/templates/login-shell.html) - unauthenticated login shell template
@@ -221,7 +210,7 @@ Metadata search is optional. Core linking and folder browsing work without it.
 npm test
 ```
 
-The test suite covers executor behavior, helper API contracts, auth/session boundaries, token non-leakage, rollback-path behavior, and static-asset bootstrap.
+The test suite covers executor behavior, helper API contracts, auth/session boundaries, token non-leakage, and static-asset bootstrap.
 
 ## Publication Notes
 

@@ -1,7 +1,5 @@
-import fs from "node:fs";
 import path from "node:path";
 import { promises as fsp } from "node:fs";
-import { Client } from "ssh2";
 
 export const TORRENTS_ROOT = "/volume1/Movies/Torrents";
 export const MOVIES_ROOT = "/volume1/Movies/Movies";
@@ -21,18 +19,14 @@ class ExecutorInputError extends Error {
   }
 }
 
-function escShell(value) {
-  return `'${String(value).replaceAll(`'`, `'\\''`)}'`;
-}
-
-function rejectUnsafePath(p) {
-  if (typeof p !== "string") {
+function rejectUnsafePath(value) {
+  if (typeof value !== "string") {
     throw new ExecutorInputError("Path must be a string");
   }
-  if (/(^|\/)\.\.(\/|$)/.test(p)) {
+  if (/(^|\/)\.\.(\/|$)/.test(value)) {
     throw new ExecutorInputError("Path contains .. segment");
   }
-  if (/[\u0000-\u001F\u007F]/.test(p)) {
+  if (/[\x00-\x1F\x7F]/.test(value)) {
     throw new ExecutorInputError("Control characters in path");
   }
 }
@@ -73,26 +67,15 @@ function formatStatTime(stat) {
   ].join(" ");
 }
 
-export function isUnder(p, root) {
-  if (typeof p !== "string") return false;
-  if (/(^|\/)\.\.(\/|$)/.test(p)) return false;
-  return p === root || p.startsWith(root + "/");
+export function isUnder(value, root) {
+  if (typeof value !== "string") return false;
+  if (/(^|\/)\.\.(\/|$)/.test(value)) return false;
+  return value === root || value.startsWith(root + "/");
 }
 
 export function isAllowedListDir(dir, roots = DEFAULT_ROOTS) {
   if (typeof dir !== "string") return false;
   return [roots.torrents, roots.movies, roots.tv].some((root) => dir === root || dir.startsWith(root + "/"));
-}
-
-function parseListdirOutput(stdout) {
-  return stdout
-    .trim()
-    .split("\n")
-    .filter(Boolean)
-    .map((line) => {
-      const [type, name, size, mtime] = line.split("|");
-      return { type, name, size, mtime };
-    });
 }
 
 function sanitizeName(value) {
@@ -171,73 +154,17 @@ async function replaceHardlink(src, dst) {
   await fsp.link(src, dst);
 }
 
-function createSshExec({ host, username, privateKeyPath }) {
-  const privateKey = fs.readFileSync(privateKeyPath, "utf8");
-
-  return function sshExec(cmd) {
-    return new Promise((resolve) => {
-      const conn = new Client();
-      let stdout = "";
-      let stderr = "";
-
-      conn
-        .on("ready", () => {
-          conn.exec(cmd, (err, stream) => {
-            if (err) {
-              conn.end();
-              return resolve({ code: 255, stdout: "", stderr: String(err) });
-            }
-            stream.on("data", (chunk) => {
-              stdout += chunk.toString("utf8");
-            });
-            stream.stderr.on("data", (chunk) => {
-              stderr += chunk.toString("utf8");
-            });
-            stream.on("close", (code) => {
-              conn.end();
-              resolve({ code: code ?? 0, stdout, stderr });
-            });
-          });
-        })
-        .on("error", (error) => resolve({ code: 255, stdout: "", stderr: String(error) }))
-        .connect({
-          host,
-          username,
-          privateKey,
-        });
-    });
+export function createExecutor({ roots: rootOverrides = {} } = {}) {
+  const roots = {
+    torrents: DEFAULT_ROOTS.torrents,
+    movies: DEFAULT_ROOTS.movies,
+    tv: DEFAULT_ROOTS.tv,
+    ...rootOverrides,
   };
-}
 
-function createBashExecutor({ scriptPath, sshExec }) {
   return {
-    async linkMovie({ src, title, year }) {
-      const cmd =
-        `/bin/bash ${escShell(scriptPath)} linkmovie ` +
-        `${escShell(src)} ${escShell(title)} ${escShell(String(year))}`;
-      return sshExec(cmd);
-    },
+    mode: "node",
 
-    async linkSeason({ srcDir, title, season, year }) {
-      const cmd =
-        `/bin/bash ${escShell(scriptPath)} linkseason ` +
-        `${escShell(srcDir)} ${escShell(title)} ${escShell(String(season))} ${escShell(String(year))}`;
-      return sshExec(cmd);
-    },
-
-    async listDir({ dir }) {
-      const cmd = `/bin/bash ${escShell(scriptPath)} listdir ${escShell(dir)}`;
-      const result = await sshExec(cmd);
-      if (result.code !== 0) {
-        return { ok: false, code: result.code, stderr: result.stderr };
-      }
-      return { ok: true, code: result.code, items: parseListdirOutput(result.stdout) };
-    },
-  };
-}
-
-function createNodeExecutor({ roots }) {
-  return {
     async linkMovie({ src, title, year }) {
       try {
         rejectUnsafePath(src);
@@ -353,51 +280,6 @@ function createNodeExecutor({ roots }) {
       } catch (error) {
         return { ok: false, code: errorCode(error), stderr: formatExecutorError(error) };
       }
-    },
-  };
-}
-
-export function createExecutor({ mode, scriptPath, ssh, sshExecOverride = null, roots: rootOverrides = {} }) {
-  if (!["bash", "node"].includes(mode)) {
-    throw new Error(`EXECUTOR_MODE must be bash|node, got: ${mode}`);
-  }
-
-  const roots = {
-    torrents: DEFAULT_ROOTS.torrents,
-    movies: DEFAULT_ROOTS.movies,
-    tv: DEFAULT_ROOTS.tv,
-    ...rootOverrides,
-  };
-  const node = createNodeExecutor({ roots });
-
-  let bash = null;
-  if (mode === "bash") {
-    if (!sshExecOverride && (!ssh?.host || !ssh?.username || !ssh?.privateKeyPath)) {
-      throw new Error("Bash executor requires ssh.host, ssh.username and ssh.privateKeyPath");
-    }
-    const sshExec = sshExecOverride ?? createSshExec(ssh);
-    bash = createBashExecutor({ scriptPath, sshExec });
-  }
-
-  return {
-    mode,
-
-    async linkMovie(input) {
-      if (mode === "node") return node.linkMovie(input);
-      if (!bash) throw new Error("Bash executor is not initialized");
-      return bash.linkMovie(input);
-    },
-
-    async linkSeason(input) {
-      if (mode === "node") return node.linkSeason(input);
-      if (!bash) throw new Error("Bash executor is not initialized");
-      return bash.linkSeason(input);
-    },
-
-    async listDir(input) {
-      if (mode === "node") return node.listDir(input);
-      if (!bash) throw new Error("Bash executor is not initialized");
-      return bash.listDir(input);
     },
   };
 }

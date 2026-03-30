@@ -4,14 +4,6 @@ set -eu
 # Local convenience launcher.
 # Copy and edit values for your own environment.
 
-export EXECUTOR_MODE="${EXECUTOR_MODE:-node}"
-
-# Rollback-only SSH settings. Required only for EXECUTOR_MODE=bash.
-export NAS_HOST="${NAS_HOST:-127.0.0.1}"
-export NAS_USER="${NAS_USER:-replace_me}"
-export NAS_KEY_PATH="${NAS_KEY_PATH:-$HOME/.ssh/replace_me}"
-export NAS_SCRIPT="${NAS_SCRIPT:-/volume1/scripts/linkmedia.sh}"
-
 # Optional metadata search settings.
 export PLEX_DISCOVER_URL="${PLEX_DISCOVER_URL:-https://discover.provider.plex.tv}"
 export PLEX_DISCOVER_TOKEN="${PLEX_DISCOVER_TOKEN:-replace_me}"

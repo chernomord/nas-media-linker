@@ -1,4 +1,3 @@
-import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
@@ -15,46 +14,23 @@ function env(name, fallback = undefined) {
 
 export const runtimeConfig = (() => {
   const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
-  const executorMode = env("EXECUTOR_MODE", "node");
   const port = Number(env("PORT", "8787"));
-  const nasHost = env("NAS_HOST");
-  const nasUser = env("NAS_USER");
-  const nasKeyPath = env("NAS_KEY_PATH");
-  const scriptPath = env("NAS_SCRIPT", "/volume1/scripts/linkmedia.sh");
   const uxStateDbPath = env(
     "UX_STATE_DB_PATH",
     path.join(repoRoot, "data", "ux-state.sqlite"),
   );
 
-  if (!["bash", "node"].includes(executorMode)) {
-    throw new Error(`EXECUTOR_MODE must be bash|node, got: ${executorMode}`);
-  }
   if (!Number.isInteger(port) || port < 0 || port > 65535) {
     throw new Error(`PORT must be an integer between 0 and 65535, got: ${port}`);
-  }
-  if (executorMode === "bash") {
-    if (!nasHost || !nasUser || !nasKeyPath) {
-      throw new Error("Need env for EXECUTOR_MODE=bash: NAS_HOST, NAS_USER, NAS_KEY_PATH");
-    }
-    if (!fs.existsSync(nasKeyPath)) {
-      throw new Error(`NAS_KEY_PATH does not exist: ${nasKeyPath}`);
-    }
   }
 
   return {
     runToken: crypto.randomBytes(32).toString("hex"),
     repoRoot,
     port,
-    executorMode,
     uxStateDbPath,
     appAssetsDir: path.join(repoRoot, "dist", "app"),
     vendorAssetsDir: path.join(repoRoot, "assets", "vendor"),
-    ssh: {
-      host: nasHost,
-      username: nasUser,
-      privateKeyPath: nasKeyPath,
-    },
-    scriptPath,
   };
 })();
 
@@ -98,7 +74,4 @@ export const defaultSavedTemplatesStore = createSavedTemplatesStore({
 });
 
 export const defaultExecutor = createExecutor({
-  mode: runtimeConfig.executorMode,
-  scriptPath: runtimeConfig.scriptPath,
-  ssh: runtimeConfig.ssh,
 });

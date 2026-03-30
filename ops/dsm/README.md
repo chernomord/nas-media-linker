@@ -6,7 +6,7 @@ This folder is the operational source of truth for DSM-hosted mode.
 
 - Release state:
   - `v1.1` closed after successful DSM reboot-smoke-test
-  - `v1.2` closed with `node` as default executor, `bash` as documented rollback, and automated parity tests passing
+  - `v1.2` closed with Node executor cutover complete
   - `v1.5-phase-2` closed with helper-managed login/session replacing browser-native Basic Auth
 - App dir: `/volume1/scripts/nas-linker`
 - Runtime user: `movies_linker`
@@ -15,7 +15,6 @@ This folder is the operational source of truth for DSM-hosted mode.
 - External entry: DSM `Login Portal` reverse proxy
 - Canonical entry: `https://nas-linker.home.arpa/`
 - Auth: helper-managed login/session via `APP_AUTH_USER` + `APP_AUTH_PASSWORD_HASH`
-- Executor mode: `EXECUTOR_MODE=bash|node` (`node` default)
 - UX state DB: `UX_STATE_DB_PATH` (sqlite file, default under `data/ux-state.sqlite`)
 
 ## Files
@@ -80,7 +79,6 @@ node -e 'const crypto=require("node:crypto"); const password=process.argv[1]; co
 Example:
 
 ```sh
-EXECUTOR_MODE="node"
 UX_STATE_DB_PATH="/volume1/scripts/nas-linker/data/ux-state.sqlite"
 
 APP_AUTH_USER="replace_me"
@@ -99,12 +97,10 @@ Metadata setup notes:
 
 Current `v1.2` execution note:
 
-- `EXECUTOR_MODE="node"` is the default and primary execution path for `listdir`, `linkmovie` and `linkseason`.
-- `EXECUTOR_MODE="bash"` remains available as the rollback path.
-- `NAS_HOST`, `NAS_USER`, `NAS_KEY_PATH` and `NAS_SCRIPT` are rollback-only settings and are not required for normal `node` startup.
+- Node executor is the only supported execution path for `listdir`, `linkmovie` and `linkseason`.
 - `saved_templates` now live in sqlite server-side UX storage; localStorage is only a bootstrap source when the server store is empty.
 - launch scripts pass `--experimental-sqlite` by default for compatibility with local Node `v22.12.x`; DSM `v22.19.x` also works with that flag.
-- `npm test` now covers node executor contracts plus local bash-vs-node parity for all three operations.
+- `npm test` covers node executor contracts and helper API behavior.
 - `GET /` now serves a login shell when no valid helper session exists; app shell is returned only after successful login.
 
 Current `v1.5` deploy note:
@@ -117,16 +113,6 @@ Current `v1.5` deploy note:
 - do not embed `npm ci` or `npm run build:ui` into boot/start scripts
 - NAS checkout must include full Node toolchain and devDependencies because `deploy-helper.sh` performs the UI build locally on NAS
 - lifecycle scripts are serialized via an ops lock under `.run/`; concurrent `deploy/start/stop/restart` attempts fail fast instead of racing each other
-
-Rollback-only SSH example:
-
-```sh
-NAS_HOST="127.0.0.1"
-NAS_USER="movies_linker"
-NAS_KEY_PATH="/var/services/homes/movies_linker/.ssh/synology_linker"
-NAS_SCRIPT="/volume1/scripts/linkmedia.sh"
-EXECUTOR_MODE="bash"
-```
 
 ## Logs and state
 
@@ -157,7 +143,6 @@ If helper was started before lifecycle scripts existed, first stop may require a
   - `deploy-helper.sh` keeps the same top-level lock while performing its restart step; it does not open a second top-level lifecycle operation
   - `status-helper.sh` can now report an in-progress operation from the ops lock
 - Always test DSM lifecycle commands in the same runtime user context that owns the process (`movies_linker` here).
-- For same-host SSH executor mode, runtime user must own a readable private key in its own `~/.ssh/`.
 - Fail fast on env mistakes. Startup validation is better than discovering path/env errors on the first `/api/*` call.
 - Keep env files shell-safe:
   - values with spaces use double quotes
