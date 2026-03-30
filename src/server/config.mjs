@@ -3,8 +3,8 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 
-import { createExecutor } from "../../lib/executor.mjs";
-import { createSavedTemplatesStore } from "../../lib/saved-templates-store.mjs";
+import { createExecutor } from "../core/executor.mjs";
+import { createSavedTemplatesStore } from "../core/saved-templates-store.mjs";
 
 function env(name, fallback = undefined) {
   const raw = process.env[name];

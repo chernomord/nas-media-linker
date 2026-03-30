@@ -81,11 +81,29 @@ lock_owner_summary() {
   printf '%s (pid=%s)\n' "$op" "$pid"
 }
 
+lock_is_reentrant_for_current_process_tree() {
+  if [ "${NAS_LINKER_LOCK_HELD:-0}" != "1" ]; then
+    return 1
+  fi
+
+  owner_pid="${NAS_LINKER_LOCK_OWNER_PID:-}"
+  if [ -z "$owner_pid" ] || [ ! -d "$LOCK_DIR" ]; then
+    return 1
+  fi
+
+  lock_pid=$(cat "$LOCK_DIR/pid" 2>/dev/null || true)
+  if [ "$lock_pid" != "$owner_pid" ]; then
+    return 1
+  fi
+
+  kill -0 "$owner_pid" 2>/dev/null
+}
+
 acquire_ops_lock() {
   op="${1:-operation}"
   ensure_runtime_dirs
 
-  if [ "${NAS_LINKER_LOCK_HELD:-0}" = "1" ]; then
+  if lock_is_reentrant_for_current_process_tree; then
     return 0
   fi
 
@@ -93,7 +111,9 @@ acquire_ops_lock() {
     printf '%s\n' "$$" > "$LOCK_DIR/pid"
     printf '%s\n' "$op" > "$LOCK_DIR/op"
     NAS_LINKER_LOCK_HELD=1
+    NAS_LINKER_LOCK_OWNER_PID=$$
     export NAS_LINKER_LOCK_HELD
+    export NAS_LINKER_LOCK_OWNER_PID
     return 0
   fi
 
@@ -106,9 +126,14 @@ release_ops_lock() {
   if [ "${NAS_LINKER_LOCK_HELD:-0}" != "1" ]; then
     return 0
   fi
+  if [ "${NAS_LINKER_LOCK_OWNER_PID:-}" != "$$" ]; then
+    return 0
+  fi
   rm -rf "$LOCK_DIR"
   NAS_LINKER_LOCK_HELD=0
+  NAS_LINKER_LOCK_OWNER_PID=
   export NAS_LINKER_LOCK_HELD
+  export NAS_LINKER_LOCK_OWNER_PID
 }
 
 pid_from_file() {
@@ -147,4 +172,55 @@ running_pid() {
   fi
 
   return 1
+}
+
+start_helper_runtime() {
+  if pid=$(running_pid 2>/dev/null); then
+    echo "nas-linker already running (pid=$pid)"
+    return 0
+  fi
+
+  ensure_runtime_dirs
+
+  cd "$APP_DIR"
+  nohup "$NODE_BIN" "$NODE_SQLITE_FLAG" server.mjs >>"$LOG_FILE" 2>&1 &
+  pid=$!
+  echo "$pid" > "$PID_FILE"
+
+  sleep 1
+  if kill -0 "$pid" 2>/dev/null; then
+    echo "nas-linker started (pid=$pid)"
+    return 0
+  fi
+
+  echo "ERR: nas-linker failed to start; check $LOG_FILE" >&2
+  return 1
+}
+
+stop_helper_runtime() {
+  if ! pid=$(running_pid 2>/dev/null); then
+    rm -f "$PID_FILE"
+    echo "nas-linker is not running"
+    return 0
+  fi
+
+  kill "$pid" 2>/dev/null || true
+
+  i=0
+  while kill -0 "$pid" 2>/dev/null; do
+    i=$((i + 1))
+    if [ "$i" -ge 10 ]; then
+      kill -9 "$pid" 2>/dev/null || true
+      break
+    fi
+    sleep 1
+  done
+
+  rm -f "$PID_FILE"
+  echo "nas-linker stopped"
+}
+
+restart_helper_runtime() {
+  stop_helper_runtime
+  start_helper_runtime
 }

@@ -22,9 +22,9 @@ reject_unsafe_path() {
   # Запрещаем только реальные traversal-сегменты (`/../`), но не имена вроде `Paris..S01`.
   [[ "$p" =~ (^|/)\.\.(/|$) ]] && die "Path contains .. segment"
 
-  # запрет не-ASCII управляющих символов
-  if printf '%s' "$p" | LC_ALL=C grep -q '[^ -~]'; then
-    die "Non-ASCII or control characters in path"
+  # запрет управляющих символов; printable Unicode в путях допускаем
+  if printf '%s' "$p" | grep -q '[[:cntrl:]]'; then
+    die "Control characters in path"
   fi
 }
 

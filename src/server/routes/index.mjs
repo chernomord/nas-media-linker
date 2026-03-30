@@ -1,8 +1,8 @@
-import { registerLinkRoutes } from "./routes/link-routes.mjs";
-import { registerMetadataRoutes } from "./routes/metadata-routes.mjs";
-import { registerSavedTemplateRoutes } from "./routes/saved-template-routes.mjs";
-import { registerSessionRoutes } from "./routes/session-routes.mjs";
-import { registerShellRoutes } from "./routes/shell-routes.mjs";
+import { registerLinkRoutes } from "./link-routes.mjs";
+import { registerMetadataRoutes } from "./metadata-routes.mjs";
+import { registerSavedTemplateRoutes } from "./saved-templates-routes.mjs";
+import { registerSessionRoutes } from "./session-routes.mjs";
+import { registerShellRoutes } from "./shell-routes.mjs";
 
 export function registerAppRoutes({
   app,

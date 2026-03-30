@@ -1,5 +1,5 @@
 import express from "express";
-import { createSessionAuth, createTokenAuth } from "./auth.mjs";
+import { createSessionAuth, createTokenAuth } from "./auth/session-auth.mjs";
 import {
   appAuthConfig,
   defaultExecutor,
@@ -10,9 +10,9 @@ import {
   enrichItemsWithOmdbPoster,
   hasPlexDiscoverConfig,
   plexDiscoverContainer,
-} from "./metadata.mjs";
-import { registerAppRoutes } from "./routes.mjs";
-import { buildLoginHtml, buildUiHtml } from "./ui-renderer.mjs";
+} from "./metadata/media-metadata.mjs";
+import { registerAppRoutes } from "./routes/index.mjs";
+import { buildLoginHtml, buildUiHtml } from "./ui/ui-renderer.mjs";
 
 export function createApp({
   runToken = runtimeConfig.runToken,

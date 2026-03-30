@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { mkdtemp, rm } from "node:fs/promises";
 
-import { createSavedTemplatesStore } from "../lib/saved-templates-store.mjs";
+import { createSavedTemplatesStore } from "../src/core/saved-templates-store.mjs";
 
 async function makeStore() {
   const base = await mkdtemp(path.join(os.tmpdir(), "nas-linker-db-"));

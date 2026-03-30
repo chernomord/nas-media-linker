@@ -2,7 +2,7 @@ import {
   isAllowedListDir,
   isUnder,
   TORRENTS_ROOT,
-} from "../../../lib/executor.mjs";
+} from "../../core/executor.mjs";
 
 export function registerLinkRoutes({ app, auth, executor, sessionAuth } = {}) {
   app.post("/api/link/movie", sessionAuth.requireSession, auth, async (req, res) => {

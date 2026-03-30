@@ -6,8 +6,8 @@ import path from "node:path";
 import { once } from "node:events";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 
-import { createExecutor, TORRENTS_ROOT } from "../lib/executor.mjs";
-import { createSavedTemplatesStore } from "../lib/saved-templates-store.mjs";
+import { createExecutor, TORRENTS_ROOT } from "../src/core/executor.mjs";
+import { createSavedTemplatesStore } from "../src/core/saved-templates-store.mjs";
 import { createApp } from "../server.mjs";
 
 function createPasswordHash(password) {
@@ -736,7 +736,46 @@ test("list endpoint returns executor-error shape for nested traversal under allo
   });
 });
 
-test("list endpoint returns executor-error shape for non-ASCII path under allowed root", async () => {
+test("list endpoint accepts printable Unicode path under allowed root", async () => {
+  let observedDir = null;
+  const app = createApp({
+    runToken: "test-token",
+    executor: {
+      async linkMovie() { return { code: 0, stdout: "", stderr: "" }; },
+      async linkSeason() { return { code: 0, stdout: "", stderr: "" }; },
+      async listDir({ dir }) {
+        observedDir = dir;
+        return {
+          ok: true,
+          code: 0,
+          items: [{ type: "d", name: "Сезон 01", size: "-", mtime: "2026-03-30 00:00:00.000000000 +0000" }],
+        };
+      },
+    },
+    savedTemplatesStore: makeSavedTemplatesStore(),
+  });
+
+  await withServer(app, async (baseUrl) => {
+    const dir = `${TORRENTS_ROOT}/Фильм`;
+    const resp = await fetch(`${baseUrl}/api/list`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        ...authHeaders({ runToken: "test-token" }),
+      },
+      body: JSON.stringify({ dir }),
+    });
+    assert.equal(resp.status, 200);
+    assert.equal(observedDir, dir);
+    assert.deepEqual(await resp.json(), {
+      ok: true,
+      dir,
+      items: [{ type: "d", name: "Сезон 01", size: "-", mtime: "2026-03-30 00:00:00.000000000 +0000" }],
+    });
+  });
+});
+
+test("list endpoint returns executor-error shape for control characters under allowed root", async () => {
   const app = createApp({
     runToken: "test-token",
     executor: createExecutor({
@@ -753,12 +792,12 @@ test("list endpoint returns executor-error shape for non-ASCII path under allowe
         "content-type": "application/json",
         ...authHeaders({ runToken: "test-token" }),
       },
-      body: JSON.stringify({ dir: `${TORRENTS_ROOT}/Фильм` }),
+      body: JSON.stringify({ dir: `${TORRENTS_ROOT}/bad\nname` }),
     });
     assert.equal(resp.status, 200);
     assert.deepEqual(await resp.json(), {
       ok: false,
-      stderr: "ERR: Non-ASCII or control characters in path\n",
+      stderr: "ERR: Control characters in path\n",
     });
   });
 });
@@ -915,7 +954,51 @@ test("movie endpoint rejects traversal payload with nested .. segment", async ()
   });
 });
 
-test("movie endpoint returns executor-error shape for non-ASCII path under torrents root", async () => {
+test("movie endpoint accepts printable Unicode path under torrents root", async () => {
+  let observedInput = null;
+  const app = createApp({
+    runToken: "test-token",
+    executor: {
+      async linkMovie(input) {
+        observedInput = input;
+        return { code: 0, stdout: "linked-unicode\n", stderr: "" };
+      },
+      async linkSeason() { return { code: 0, stdout: "", stderr: "" }; },
+      async listDir() { return { ok: true, code: 0, items: [] }; },
+    },
+    savedTemplatesStore: makeSavedTemplatesStore(),
+  });
+
+  await withServer(app, async (baseUrl) => {
+    const src = `${TORRENTS_ROOT}/Фильм/file.mkv`;
+    const resp = await fetch(`${baseUrl}/api/link/movie`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        ...authHeaders({ runToken: "test-token" }),
+      },
+      body: JSON.stringify({
+        src,
+        title: "Фильм",
+        year: "2024",
+      }),
+    });
+    assert.equal(resp.status, 200);
+    assert.deepEqual(observedInput, {
+      src,
+      title: "Фильм",
+      year: "2024",
+    });
+    assert.deepEqual(await resp.json(), {
+      ok: true,
+      code: 0,
+      stdout: "linked-unicode\n",
+      stderr: "",
+    });
+  });
+});
+
+test("movie endpoint returns executor-error shape for control characters under torrents root", async () => {
   const app = createApp({
     runToken: "test-token",
     executor: createExecutor({
@@ -933,7 +1016,7 @@ test("movie endpoint returns executor-error shape for non-ASCII path under torre
         ...authHeaders({ runToken: "test-token" }),
       },
       body: JSON.stringify({
-        src: `${TORRENTS_ROOT}/Фильм/file.mkv`,
+        src: `${TORRENTS_ROOT}/bad\nmovie/file.mkv`,
         title: "Movie",
         year: "2024",
       }),
@@ -943,7 +1026,7 @@ test("movie endpoint returns executor-error shape for non-ASCII path under torre
       ok: false,
       code: 2,
       stdout: "",
-      stderr: "ERR: Non-ASCII or control characters in path\n",
+      stderr: "ERR: Control characters in path\n",
     });
   });
 });
@@ -1104,7 +1187,53 @@ test("season endpoint rejects traversal payload with nested .. segment", async (
   });
 });
 
-test("season endpoint returns executor-error shape for non-ASCII path under torrents root", async () => {
+test("season endpoint accepts printable Unicode path under torrents root", async () => {
+  let observedInput = null;
+  const app = createApp({
+    runToken: "test-token",
+    executor: {
+      async linkMovie() { return { code: 0, stdout: "", stderr: "" }; },
+      async linkSeason(input) {
+        observedInput = input;
+        return { code: 0, stdout: "season-unicode\n", stderr: "" };
+      },
+      async listDir() { return { ok: true, code: 0, items: [] }; },
+    },
+    savedTemplatesStore: makeSavedTemplatesStore(),
+  });
+
+  await withServer(app, async (baseUrl) => {
+    const srcDir = `${TORRENTS_ROOT}/Сериал`;
+    const resp = await fetch(`${baseUrl}/api/link/season`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        ...authHeaders({ runToken: "test-token" }),
+      },
+      body: JSON.stringify({
+        srcDir,
+        title: "Сериал",
+        season: "1",
+        year: "2024",
+      }),
+    });
+    assert.equal(resp.status, 200);
+    assert.deepEqual(observedInput, {
+      srcDir,
+      title: "Сериал",
+      season: "1",
+      year: "2024",
+    });
+    assert.deepEqual(await resp.json(), {
+      ok: true,
+      code: 0,
+      stdout: "season-unicode\n",
+      stderr: "",
+    });
+  });
+});
+
+test("season endpoint returns executor-error shape for control characters under torrents root", async () => {
   const app = createApp({
     runToken: "test-token",
     executor: createExecutor({
@@ -1122,7 +1251,7 @@ test("season endpoint returns executor-error shape for non-ASCII path under torr
         ...authHeaders({ runToken: "test-token" }),
       },
       body: JSON.stringify({
-        srcDir: `${TORRENTS_ROOT}/Сериал`,
+        srcDir: `${TORRENTS_ROOT}/bad\nshow`,
         title: "Show",
         season: "1",
         year: "2024",
@@ -1133,7 +1262,7 @@ test("season endpoint returns executor-error shape for non-ASCII path under torr
       ok: false,
       code: 2,
       stdout: "",
-      stderr: "ERR: Non-ASCII or control characters in path\n",
+      stderr: "ERR: Control characters in path\n",
     });
   });
 });

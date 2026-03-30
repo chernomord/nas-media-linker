@@ -1,4 +1,4 @@
-import { extractPlexResults } from "../metadata.mjs";
+import { extractPlexResults } from "../metadata/media-metadata.mjs";
 
 export function registerMetadataRoutes({
   app,

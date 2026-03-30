@@ -154,6 +154,7 @@ If helper was started before lifecycle scripts existed, first stop may require a
   - `deploy-helper.sh` is the only script that should run `npm ci` and `npm run build:ui`
 - Treat DSM ops scripts as mutually exclusive:
   - if `deploy-helper.sh` is running, manual `restart-helper.sh` should fail fast rather than interleave with build/restart steps
+  - `deploy-helper.sh` keeps the same top-level lock while performing its restart step; it does not open a second top-level lifecycle operation
   - `status-helper.sh` can now report an in-progress operation from the ops lock
 - Always test DSM lifecycle commands in the same runtime user context that owns the process (`movies_linker` here).
 - For same-host SSH executor mode, runtime user must own a readable private key in its own `~/.ssh/`.

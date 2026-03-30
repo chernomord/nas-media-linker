@@ -200,13 +200,13 @@ Metadata search is optional. Core linking and folder browsing work without it.
 - [`helper.mjs`](./helper.mjs) - compatibility shim for the legacy entrypoint name
 - [`src/server/app.mjs`](./src/server/app.mjs) - Express bootstrap and dependency wiring
 - [`src/server/config.mjs`](./src/server/config.mjs) - runtime env parsing and default dependency assembly
-- [`src/server/auth.mjs`](./src/server/auth.mjs) - session auth and runtime-token request binding
-- [`src/server/routes.mjs`](./src/server/routes.mjs) - top-level route composition
+- [`src/server/auth/`](./src/server/auth) - auth modules for session and runtime-token request binding
+- [`src/server/routes/index.mjs`](./src/server/routes/index.mjs) - top-level route composition
 - [`src/server/routes/`](./src/server/routes) - route modules split by session, linking, metadata, saved templates, and shell
-- [`src/server/metadata.mjs`](./src/server/metadata.mjs) - Plex Discover and OMDb metadata helpers
-- [`src/server/ui-renderer.mjs`](./src/server/ui-renderer.mjs) - HTML shell loading and token/template injection
-- [`lib/executor.mjs`](./lib/executor.mjs) - primary Node executor and bash rollback integration
-- [`lib/saved-templates-store.mjs`](./lib/saved-templates-store.mjs) - sqlite-backed saved-template storage
+- [`src/server/metadata/`](./src/server/metadata) - Plex Discover and OMDb metadata helpers
+- [`src/server/ui/`](./src/server/ui) - HTML shell loading and token/template injection
+- [`src/core/executor.mjs`](./src/core/executor.mjs) - primary Node executor and bash rollback integration
+- [`src/core/saved-templates-store.mjs`](./src/core/saved-templates-store.mjs) - sqlite-backed saved-template storage
 - [`src/templates/app-shell.html`](./src/templates/app-shell.html) - authenticated app shell template
 - [`src/templates/login-shell.html`](./src/templates/login-shell.html) - unauthenticated login shell template
 - [`src/ui/`](./src/ui) - Vite UI source

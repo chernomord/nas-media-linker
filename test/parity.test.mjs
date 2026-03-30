@@ -5,7 +5,7 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 
-import { createExecutor } from "../lib/executor.mjs";
+import { createExecutor } from "../src/core/executor.mjs";
 
 const SCRIPT_PATH = path.resolve("linkmedia.sh");
 
@@ -202,6 +202,86 @@ test("bash and node listDir preserve spaces in entry names", async () => {
     assert.match(bash.stdout, /Alpha One/);
     assert.match(bash.stdout, /beta one\.mkv/);
     assert.doesNotMatch(bash.stdout, /Alpha_One|beta_one\.mkv/);
+    assert.deepEqual(
+      node.items.map(({ type, name, size }) => ({ type, name, size })),
+      bash.stdout
+        .trim()
+        .split("\n")
+        .filter(Boolean)
+        .map((line) => {
+          const [type, name, size] = line.split("|");
+          return { type, name, size };
+        }),
+    );
+  } finally {
+    await rm(fixture.base, { recursive: true, force: true });
+  }
+});
+
+test("bash and node linkMovie preserve printable Unicode source and destination paths", async () => {
+  const fixture = await makeFixture();
+  try {
+    const srcDir = path.join(fixture.roots.torrents, "Фильм Папка");
+    await mkdir(srcDir);
+    const src = path.join(srcDir, "Файл.mkv");
+    await writeFile(src, "video");
+
+    const bash = await runBash(["linkmovie", srcDir, "Фильм Название", "2024"], fixture.roots);
+    const node = await fixture.executor.linkMovie({
+      src: srcDir,
+      title: "Фильм Название",
+      year: "2024",
+    });
+
+    assert.equal(node.code, bash.code);
+    assert.equal(node.stderr, bash.stderr);
+    assert.equal(node.stdout, bash.stdout);
+    assert.match(node.stdout, /Фильм Папка\/Файл\.mkv/);
+    assert.match(node.stdout, /Фильм Название \(2024\)\/Фильм Название \(2024\)\.mkv/);
+  } finally {
+    await rm(fixture.base, { recursive: true, force: true });
+  }
+});
+
+test("bash and node linkSeason preserve printable Unicode source and destination paths", async () => {
+  const fixture = await makeFixture();
+  try {
+    const srcDir = path.join(fixture.roots.torrents, "Сериал Папка");
+    await mkdir(srcDir);
+    await writeFile(path.join(srcDir, "Серия 01.mkv"), "one");
+    await writeFile(path.join(srcDir, "Серия 02.mp4"), "two");
+
+    const bash = await runBash(["linkseason", srcDir, "Сериал Название", "1", "2025"], fixture.roots);
+    const node = await fixture.executor.linkSeason({
+      srcDir,
+      title: "Сериал Название",
+      season: "1",
+      year: "2025",
+    });
+
+    assert.equal(node.code, bash.code);
+    assert.equal(node.stderr, bash.stderr);
+    assert.equal(node.stdout, bash.stdout);
+    assert.match(node.stdout, /Сериал Папка/);
+    assert.match(node.stdout, /Сериал Название \(2025\)\/Season 01\/Серия 01\.mkv/);
+  } finally {
+    await rm(fixture.base, { recursive: true, force: true });
+  }
+});
+
+test("bash and node listDir preserve printable Unicode entry names", async () => {
+  const fixture = await makeFixture();
+  try {
+    await mkdir(path.join(fixture.roots.torrents, "Сезон Один"));
+    await writeFile(path.join(fixture.roots.torrents, "серия один.mkv"), "video");
+
+    const bash = await runBash(["listdir", fixture.roots.torrents], fixture.roots);
+    const node = await fixture.executor.listDir({ dir: fixture.roots.torrents });
+
+    assert.equal(bash.code, 0);
+    assert.equal(node.ok, true);
+    assert.match(bash.stdout, /Сезон Один/);
+    assert.match(bash.stdout, /серия один\.mkv/);
     assert.deepEqual(
       node.items.map(({ type, name, size }) => ({ type, name, size })),
       bash.stdout

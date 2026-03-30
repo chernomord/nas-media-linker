@@ -1,4 +1,4 @@
-import { discoverConfig, omdbConfig } from "./config.mjs";
+import { discoverConfig, omdbConfig } from "../config.mjs";
 
 export function hasPlexDiscoverConfig() {
   return Boolean(discoverConfig.url && discoverConfig.token);

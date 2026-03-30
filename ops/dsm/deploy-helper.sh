@@ -23,4 +23,4 @@ echo "nas-linker deploy: build UI"
 "$NPM_BIN" run build:ui
 
 echo "nas-linker deploy: restart helper"
-"$SCRIPT_DIR/restart-helper.sh"
+restart_helper_runtime

@@ -32,8 +32,8 @@ function rejectUnsafePath(p) {
   if (/(^|\/)\.\.(\/|$)/.test(p)) {
     throw new ExecutorInputError("Path contains .. segment");
   }
-  if (/[^\x20-\x7E]/.test(p)) {
-    throw new ExecutorInputError("Non-ASCII or control characters in path");
+  if (/[\u0000-\u001F\u007F]/.test(p)) {
+    throw new ExecutorInputError("Control characters in path");
   }
 }
 
