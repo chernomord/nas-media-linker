@@ -37,7 +37,8 @@ Helper‑сервис для линковки медиа на Synology NAS. UI �
 - `src/templates/app-shell.html` — основной app shell.
 - `src/templates/login-shell.html` — login shell для unauthenticated entry.
 - `src/ui/app.js`, `src/ui/app.css` — Vite source для UI assets.
-- `assets/app/` — helper-served built UI assets.
+- `dist/app/` — helper-served built UI assets.
+- `assets/vendor/` — checked-in vendor static assets.
 - `lib/executor.mjs` — primary Node executor + bash rollback integration.
 - `lib/saved-templates-store.mjs` — sqlite-backed UX state store.
 - `linkmedia.sh` — скрипт на NAS: linkmovie/linkseason/listdir.
@@ -768,7 +769,7 @@ Current implementation checkpoint:
 - phase: v1.3-phase-3
   status: done
   delivered:
-    - core UI assets are built through Vite into helper-served files under `assets/app`
+    - core UI assets are built through Vite into helper-served files under `dist/app`
     - target UI no longer depends on external CDN availability for Tailwind or Shoelace runtime assets
     - runtime HTML remains helper-templated; build output affects only static UI assets
   invariant:

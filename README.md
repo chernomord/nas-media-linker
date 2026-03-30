@@ -210,7 +210,8 @@ Metadata search is optional. Core linking and folder browsing work without it.
 - [`src/templates/app-shell.html`](./src/templates/app-shell.html) - authenticated app shell template
 - [`src/templates/login-shell.html`](./src/templates/login-shell.html) - unauthenticated login shell template
 - [`src/ui/`](./src/ui) - Vite UI source
-- [`assets/app/`](./assets/app) - built UI assets served by helper
+- [`dist/app/`](./dist/app) - built UI assets served by helper at `/assets/app/...`
+- [`assets/vendor/`](./assets/vendor) - checked-in vendor static assets served at `/assets/vendor/...`
 - [`ops/dsm/`](./ops/dsm) - DSM lifecycle and deploy scripts
 - [`test/`](./test) - automated tests
 

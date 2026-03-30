@@ -18,7 +18,8 @@ export function createApp({
   runToken = runtimeConfig.runToken,
   executor = defaultExecutor,
   savedTemplatesStore = defaultSavedTemplatesStore,
-  assetsDir = runtimeConfig.assetsDir,
+  appAssetsDir = runtimeConfig.appAssetsDir,
+  vendorAssetsDir = runtimeConfig.vendorAssetsDir,
   appAuthUser = appAuthConfig.user,
   appAuthPasswordHash = appAuthConfig.passwordHash,
   hasPlexDiscoverConfigFn = hasPlexDiscoverConfig,
@@ -40,7 +41,8 @@ export function createApp({
 
   app.use(sessionAuth.attachSession);
   app.use(express.json({ limit: "64kb" }));
-  app.use("/assets", express.static(assetsDir));
+  app.use("/assets/app", express.static(appAssetsDir));
+  app.use("/assets/vendor", express.static(vendorAssetsDir));
   registerAppRoutes({
     app,
     auth,

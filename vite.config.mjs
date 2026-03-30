@@ -4,7 +4,7 @@ import { defineConfig } from "vite";
 export default defineConfig({
   publicDir: false,
   build: {
-    outDir: "assets/app",
+    outDir: "dist/app",
     emptyOutDir: true,
     rollupOptions: {
       input: path.resolve("src/ui/app.js"),

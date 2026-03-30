@@ -47,7 +47,8 @@ export const runtimeConfig = (() => {
     port,
     executorMode,
     uxStateDbPath,
-    assetsDir: path.join(repoRoot, "assets"),
+    appAssetsDir: path.join(repoRoot, "dist", "app"),
+    vendorAssetsDir: path.join(repoRoot, "assets", "vendor"),
     ssh: {
       host: nasHost,
       username: nasUser,
