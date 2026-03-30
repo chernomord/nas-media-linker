@@ -201,7 +201,8 @@ Metadata search is optional. Core linking and folder browsing work without it.
 - [`src/server/app.mjs`](./src/server/app.mjs) - Express bootstrap and dependency wiring
 - [`src/server/config.mjs`](./src/server/config.mjs) - runtime env parsing and default dependency assembly
 - [`src/server/auth.mjs`](./src/server/auth.mjs) - session auth and runtime-token request binding
-- [`src/server/routes.mjs`](./src/server/routes.mjs) - API and shell route registration
+- [`src/server/routes.mjs`](./src/server/routes.mjs) - top-level route composition
+- [`src/server/routes/`](./src/server/routes) - route modules split by session, linking, metadata, saved templates, and shell
 - [`src/server/metadata.mjs`](./src/server/metadata.mjs) - Plex Discover and OMDb metadata helpers
 - [`src/server/ui-renderer.mjs`](./src/server/ui-renderer.mjs) - HTML shell loading and token/template injection
 - [`lib/executor.mjs`](./lib/executor.mjs) - primary Node executor and bash rollback integration
