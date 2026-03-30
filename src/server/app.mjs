@@ -585,7 +585,7 @@ const UI_TEMPLATE = fs.readFileSync(new URL("../templates/app-shell.html", impor
 const LOGIN_TEMPLATE = fs.readFileSync(new URL("../templates/login-shell.html", import.meta.url), "utf8");
 function buildUiHtml(runToken) {
   return UI_TEMPLATE
-    .replaceAll("__RUN_TOKEN__", JSON.stringify(runToken))
+    .replaceAll("__RUN_TOKEN__", escapeHtml(runToken))
     .replaceAll("__TORRENTS_ROOT__", escapeHtml(TORRENTS_ROOT))
     .replaceAll("__MOVIES_ROOT__", escapeHtml(MOVIES_ROOT))
     .replaceAll("__TV_ROOT__", escapeHtml(TV_ROOT));

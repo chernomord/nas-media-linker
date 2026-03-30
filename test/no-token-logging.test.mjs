@@ -78,7 +78,7 @@ test("helper startup logs do not contain runtime token or discover token", async
   try {
     const port = await waitForOpen(child, stdoutChunks, stderrChunks);
     const html = await fetch(`http://127.0.0.1:${port}/`).then((resp) => resp.text());
-    const match = html.match(/const RUN_TOKEN = "([^"]+)";/);
+    const match = html.match(/data-run-token="([^"]+)"/);
     assert.ok(match, "RUN_TOKEN should be embedded in delivered HTML");
     const runtimeToken = match[1];
 

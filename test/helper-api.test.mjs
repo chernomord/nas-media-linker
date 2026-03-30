@@ -142,7 +142,7 @@ test("root returns login shell when session auth is configured and no session ex
     const html = await resp.text();
     assert.equal(resp.status, 200);
     assert.match(html, /Sign in to continue/);
-    assert.doesNotMatch(html, /const RUN_TOKEN = "test-token";/);
+    assert.doesNotMatch(html, /data-run-token="test-token"/);
   });
 });
 
@@ -337,7 +337,7 @@ test("successful session login makes root return the app shell", async () => {
     });
     const html = await resp.text();
     assert.equal(resp.status, 200);
-    assert.match(html, /const RUN_TOKEN = "test-token";/);
+    assert.match(html, /data-run-token="test-token"/);
     assert.match(html, /id="logout_btn"/);
     assert.doesNotMatch(html, /Sign in to continue/);
   });
@@ -406,7 +406,7 @@ test("root html includes runtime token placeholder replacement", async () => {
     const resp = await fetch(`${baseUrl}/`);
     const html = await resp.text();
     assert.equal(resp.status, 200);
-    assert.match(html, /const RUN_TOKEN = "runtime-token-123";/);
+    assert.match(html, /data-run-token="runtime-token-123"/);
     assert.match(html, /id="session_modal"/);
     assert.match(html, /id="session_reload"/);
     assert.doesNotMatch(html, /X-Plex-Token/);
@@ -500,8 +500,11 @@ test("helper serves the full local UI bootstrap graph used by the page", async (
       "built bundle must define every Shoelace component the page uses",
     );
 
-    const uiSource = await readFile(new URL("../src/templates/app-shell.html", import.meta.url), "utf8");
-    const iconNames = collectUiIconNames(uiSource);
+    const [uiTemplateSource, uiRuntimeSource] = await Promise.all([
+      readFile(new URL("../src/templates/app-shell.html", import.meta.url), "utf8"),
+      readFile(new URL("../src/ui/app-shell-runtime.js", import.meta.url), "utf8"),
+    ]);
+    const iconNames = collectUiIconNames(`${uiTemplateSource}\n${uiRuntimeSource}`);
     assert.ok(iconNames.length > 0);
 
     for (const iconName of iconNames) {

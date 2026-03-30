@@ -28,3 +28,266 @@
     color: #ffffff;
   }
 }
+
+html {
+  box-sizing: border-box;
+}
+
+*, *::before, *::after {
+  box-sizing: inherit;
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+:root {
+  --sl-font-sans: "Avenir Next", "SF Pro Display", "Segoe UI", ui-sans-serif, system-ui;
+  --sl-panel-background-color: rgba(255, 255, 255, 0.9);
+  --sl-panel-border-color: rgba(148, 163, 184, 0.35);
+  --sl-panel-border-width: 1px;
+  --sl-panel-border-radius: 24px;
+  --sl-panel-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+  --sl-card-padding: 14px;
+  --sl-color-primary-50: #eff6ff;
+  --sl-color-primary-100: #dbeafe;
+  --sl-color-primary-200: #bfdbfe;
+  --sl-color-primary-300: #93c5fd;
+  --sl-color-primary-400: #60a5fa;
+  --sl-color-primary-500: #3b82f6;
+  --sl-color-primary-600: #2563eb;
+  --sl-color-primary-700: #1d4ed8;
+  --sl-color-primary-800: #1e40af;
+  --sl-color-primary-900: #1e3a8a;
+  --sl-color-success-50: #ecfdf5;
+  --sl-color-success-100: #d1fae5;
+  --sl-color-success-200: #a7f3d0;
+  --sl-color-success-300: #6ee7b7;
+  --sl-color-success-400: #34d399;
+  --sl-color-success-500: #10b981;
+  --sl-color-success-600: #059669;
+  --sl-color-success-700: #047857;
+  --sl-color-success-800: #065f46;
+  --sl-color-success-900: #064e3b;
+  --sl-color-neutral-0: #ffffff;
+  --sl-color-neutral-50: #f8fafc;
+  --sl-color-neutral-100: #f1f5f9;
+  --sl-color-neutral-200: #e2e8f0;
+  --sl-color-neutral-300: #cbd5f5;
+  --sl-color-neutral-400: #94a3b8;
+  --sl-color-neutral-500: #64748b;
+  --sl-color-neutral-600: #475569;
+  --sl-color-neutral-700: #334155;
+  --sl-color-neutral-800: #1f2937;
+  --sl-color-neutral-900: #0f172a;
+  --sl-border-radius-small: 8px;
+  --sl-border-radius-medium: 12px;
+  --sl-border-radius-large: 16px;
+  --sl-input-background-color: #ffffff;
+  --sl-input-background-color-hover: #f8fafc;
+  --sl-input-background-color-focus: #ffffff;
+  --sl-input-border-color: #e2e8f0;
+  --sl-input-border-color-hover: #cbd5f5;
+  --sl-input-border-color-focus: #93c5fd;
+  --sl-input-border-width: 1px;
+  --sl-input-focus-ring-color: rgba(59, 130, 246, 0.2);
+  --sl-input-height-small: 34px;
+  --sl-input-border-radius-small: 10px;
+  --sl-button-font-weight: 600;
+  --sl-button-border-radius-small: 10px;
+  --sl-button-padding-x-small: 10px;
+  --sl-button-padding-y-small: 6px;
+  --sl-input-font-size-small: 0.875rem;
+  --sl-input-label-font-size-small: 0.75rem;
+  --sl-toggle-size-small: 16px;
+}
+
+body.app-shell-page {
+  font-family: "Avenir Next", "SF Pro Display", "Segoe UI", ui-sans-serif, system-ui;
+  background-color: #0b1020;
+  position: relative;
+  overflow-x: hidden;
+  color: #e2e8f0;
+}
+
+body.app-shell-page::before {
+  content: "";
+  position: fixed;
+  inset: -20%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(1400px 900px at 15% 20%, rgba(124, 58, 237, 0.35), transparent 60%),
+    radial-gradient(1100px 800px at 80% 75%, rgba(59, 130, 246, 0.28), transparent 60%),
+    radial-gradient(900px 700px at 60% 10%, rgba(244, 114, 182, 0.18), transparent 55%),
+    linear-gradient(180deg, #0b1020 0%, #15112a 55%, #1b1233 100%);
+  background-size: 220% 220%;
+  transform: translate3d(-3%, -2%, 0);
+}
+
+body.app-shell-page.glsl-bg::before {
+  display: none;
+}
+
+.glsl-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+body.app-shell-page main {
+  position: relative;
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.app-shell-page::before {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+body.app-shell-page main > header .text-slate-900 {
+  color: #f8fafc;
+}
+
+body.app-shell-page main > header .text-slate-500 {
+  color: #cbd5f5;
+}
+
+sl-card {
+  color: var(--sl-color-neutral-900);
+}
+
+sl-card.glass-card::part(base) {
+  backdrop-filter: blur(6px);
+}
+
+sl-input.flash::part(base) {
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.35);
+  border-color: #34d399;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.preview-cover {
+  cursor: zoom-in;
+}
+
+.preview-modal-img {
+  max-height: 80vh;
+  width: 100%;
+  object-fit: contain;
+}
+
+body.login-page {
+  min-height: 100vh;
+  margin: 0;
+  font-family: "Avenir Next", "SF Pro Display", "Segoe UI", ui-sans-serif, system-ui;
+  background:
+    radial-gradient(1400px 900px at 15% 20%, rgba(124, 58, 237, 0.35), transparent 60%),
+    radial-gradient(1100px 800px at 80% 75%, rgba(59, 130, 246, 0.28), transparent 60%),
+    radial-gradient(900px 700px at 60% 10%, rgba(244, 114, 182, 0.18), transparent 55%),
+    linear-gradient(180deg, #0b1020 0%, #15112a 55%, #1b1233 100%);
+  color: #e2e8f0;
+}
+
+.login-shell {
+  max-width: 28rem;
+  margin: 0 auto;
+  padding: 4rem 1.25rem;
+}
+
+.login-card {
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
+  color: #0f172a;
+  padding: 1.25rem;
+}
+
+.login-meta {
+  color: #cbd5f5;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  font-size: 0.875rem;
+  margin-bottom: 0.75rem;
+}
+
+.login-title {
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1;
+  font-weight: 600;
+  margin: 0 0 1.5rem;
+  color: #f8fafc;
+}
+
+.login-form {
+  display: grid;
+  gap: 0.875rem;
+  margin-top: 1rem;
+}
+
+.login-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: #64748b;
+}
+
+.login-input {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.75rem 0.875rem;
+  font: inherit;
+  background: #fff;
+  color: #0f172a;
+}
+
+.login-input:focus {
+  outline: none;
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.login-button {
+  appearance: none;
+  border: 0;
+  border-radius: 10px;
+  background: #2563eb;
+  color: white;
+  font: inherit;
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+}
+
+.login-button:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.login-error {
+  display: none;
+  border-radius: 12px;
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  color: #9f1239;
+  padding: 0.75rem 0.875rem;
+  font-size: 0.875rem;
+}
+
+.login-error.visible {
+  display: block;
+}
+
+.login-note {
+  margin-top: 1rem;
+  color: #64748b;
+  font-size: 0.875rem;
+}
