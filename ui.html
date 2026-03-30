@@ -25,7 +25,7 @@
       --sl-panel-border-width: 1px;
       --sl-panel-border-radius: 24px;
       --sl-panel-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
-      --sl-card-padding: 16px;
+      --sl-card-padding: 14px;
       --sl-color-primary-50: #eff6ff;
       --sl-color-primary-100: #dbeafe;
       --sl-color-primary-200: #bfdbfe;
@@ -428,20 +428,20 @@
   })();
   </script>
 
-  <main class="max-w-6xl mx-auto px-5 py-8 md:py-12">
-    <header class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-      <div>
-        <p class="text-sm uppercase tracking-[0.3em] text-slate-500">Synology linker</p>
-        <h1 class="text-3xl md:text-5xl font-semibold text-slate-900">Quick NAS linking console</h1>
+  <main class="mx-auto max-w-[72rem] px-5 py-5 md:py-6">
+    <header class="flex flex-col gap-y-3 md:flex-row md:items-start md:justify-between md:gap-x-4">
+      <div class="space-y-2">
+        <p class="text-[0.7rem] uppercase tracking-[0.28em] text-slate-500">Synology linker</p>
+        <h1 class="text-2xl font-semibold leading-none tracking-[-0.03em] text-slate-900 md:text-4xl">Quick NAS linking console</h1>
       </div>
-      <div class="md:self-start flex items-center gap-2">
-        <sl-button id="logout_btn" size="small" variant="text">Logout</sl-button>
-        <sl-button id="open_log" size="small" variant="text">View log</sl-button>
+      <div class="flex items-end gap-1 md:self-center">
+        <sl-button id="open_log" class="header-action-button" size="small">View log</sl-button>
+        <sl-button id="logout_btn" class="header-action-button" size="small">Logout</sl-button>
       </div>
     </header>
 
-    <section class="mt-8 grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
-      <div class="grid gap-6">
+    <section aria-label="Linking workspace" class="mt-6 grid gap-y-5 gap-x-6 lg:grid-cols-2 lg:items-start">
+      <section aria-label="Link actions" class="min-w-0 grid gap-y-5">
         <sl-card class="glass-card">
           <sl-tab-group value="season">
             <sl-tab slot="nav" panel="season">Season</sl-tab>
@@ -449,7 +449,7 @@
 
             <sl-tab-panel name="season">
               <h2 class="text-lg font-semibold text-slate-900">Season link</h2>
-              <p class="text-sm text-slate-600">Создать сезонную структуру для сериала.</p>
+              <p class="section-subheader">Создать сезонную структуру для сериала.</p>
               <div class="mt-5 grid gap-3">
                 <div class="text-xs uppercase tracking-[0.2em] text-slate-500">Source folder</div>
                 <sl-input id="s_src" class="w-full" size="small" placeholder="__TORRENTS_ROOT__/Show Folder"></sl-input>
@@ -472,7 +472,7 @@
 
             <sl-tab-panel name="movie">
               <h2 class="text-lg font-semibold text-slate-900">Movie link</h2>
-              <p class="text-sm text-slate-600">Связать одиночный файл фильма с библиотекой.</p>
+              <p class="section-subheader">Связать одиночный файл фильма с библиотекой.</p>
               <div class="mt-5 grid gap-3">
                 <div class="text-xs uppercase tracking-[0.2em] text-slate-500">Source path</div>
                 <sl-input id="m_src" class="w-full" size="small" placeholder="__TORRENTS_ROOT__/Movies/...file.mkv"></sl-input>
@@ -493,18 +493,18 @@
             </sl-tab-panel>
           </sl-tab-group>
         </sl-card>
-      </div>
+      </section>
 
-      <aside class="flex flex-col gap-4 min-w-0">
+      <aside aria-label="Saved items and NAS browser" class="min-w-0 grid gap-y-5">
         <sl-card class="glass-card">
           <h2 class="text-lg font-semibold text-slate-900">Saved</h2>
-          <p class="text-sm text-slate-600">Быстрое заполнение форм.</p>
+          <p class="section-subheader">Быстрое заполнение форм.</p>
           <ul id="saved_list" class="mt-3 space-y-1 rounded-2xl border border-slate-200 bg-white/80 p-3 text-sm"></ul>
         </sl-card>
 
         <sl-card class="glass-card">
           <h2 class="text-lg font-semibold text-slate-900">Browse NAS</h2>
-          <p class="text-sm text-slate-600">Выбери корень и кликай по папкам.</p>
+          <p class="section-subheader">Выбери корень и кликай по папкам.</p>
           <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
             <sl-select id="root" size="small">
             <sl-option value="torrents" data-path="__TORRENTS_ROOT__">Torrents</sl-option>

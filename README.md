@@ -52,7 +52,9 @@ The tool serves a browser UI, validates paths on the server, and executes link o
 
 ## Quick Start
 
-### Local/dev mode
+### Local UI debug mode
+
+Use this when you only need the page locally for UI/styling work and do not need a production-like DSM setup.
 
 1. Install dependencies:
 
@@ -66,7 +68,39 @@ npm ci
 npm run build:ui
 ```
 
-3. Edit env values or export them in your shell. The tracked [`run.sh`](/Users/slavakomarov/Misc%20Projects/nas-linker/run.sh) is a placeholder-based launcher, not a secret store.
+3. Start the helper directly:
+
+```sh
+node --experimental-sqlite helper.mjs
+```
+
+4. Open `http://127.0.0.1:8787`.
+
+Notes:
+
+- this is a debug/preview path, not the canonical deployment model
+- with `EXECUTOR_MODE=node` (default), startup does not require rollback-only SSH env
+- auth is disabled unless `APP_AUTH_USER` and `APP_AUTH_PASSWORD_HASH` are set together
+- metadata search and real NAS operations may still be unavailable or only partially representative without the corresponding env/path setup
+- rebuild UI assets with `npm run build:ui` after frontend changes that affect the served bundle
+
+### Local helper mode with explicit env
+
+Use this if you want a fuller local helper run with your own exported env values.
+
+1. Install dependencies:
+
+```sh
+npm ci
+```
+
+2. Build UI assets:
+
+```sh
+npm run build:ui
+```
+
+3. Edit env values or export them in your shell. The tracked [`run.sh`](./run.sh) is a placeholder-based launcher, not a secret store.
 
 4. Start the helper:
 
@@ -76,12 +110,12 @@ npm run build:ui
 
 ### DSM-hosted mode
 
-Operational details live in [ops/dsm/README.md](/Users/slavakomarov/Misc%20Projects/nas-linker/ops/dsm/README.md).
+Operational details live in [ops/dsm/README.md](./ops/dsm/README.md).
 
 High-level flow:
 
 1. Copy the repo to the NAS.
-2. Create `ops/dsm/nas-linker.env` from [`ops/dsm/nas-linker.env.example`](/Users/slavakomarov/Misc%20Projects/nas-linker/ops/dsm/nas-linker.env.example).
+2. Create `ops/dsm/nas-linker.env` from [`ops/dsm/nas-linker.env.example`](./ops/dsm/nas-linker.env.example).
 3. Run deploy from the NAS:
 
 ```sh
@@ -162,15 +196,15 @@ Metadata search is optional. Core linking and folder browsing work without it.
 
 ## Repository Layout
 
-- [`helper.mjs`](/Users/slavakomarov/Misc%20Projects/nas-linker/helper.mjs) - helper API, auth/session, UI templating
-- [`lib/executor.mjs`](/Users/slavakomarov/Misc%20Projects/nas-linker/lib/executor.mjs) - primary Node executor and bash rollback integration
-- [`lib/saved-templates-store.mjs`](/Users/slavakomarov/Misc%20Projects/nas-linker/lib/saved-templates-store.mjs) - sqlite-backed saved-template storage
-- [`ui.html`](/Users/slavakomarov/Misc%20Projects/nas-linker/ui.html) - app shell
-- [`login.html`](/Users/slavakomarov/Misc%20Projects/nas-linker/login.html) - login shell
-- [`frontend/`](/Users/slavakomarov/Misc%20Projects/nas-linker/frontend) - Vite UI source
-- [`assets/app/`](/Users/slavakomarov/Misc%20Projects/nas-linker/assets/app) - built UI assets served by helper
-- [`ops/dsm/`](/Users/slavakomarov/Misc%20Projects/nas-linker/ops/dsm) - DSM lifecycle and deploy scripts
-- [`test/`](/Users/slavakomarov/Misc%20Projects/nas-linker/test) - automated tests
+- [`helper.mjs`](./helper.mjs) - helper API, auth/session, UI templating
+- [`lib/executor.mjs`](./lib/executor.mjs) - primary Node executor and bash rollback integration
+- [`lib/saved-templates-store.mjs`](./lib/saved-templates-store.mjs) - sqlite-backed saved-template storage
+- [`ui.html`](./ui.html) - app shell
+- [`login.html`](./login.html) - login shell
+- [`frontend/`](./frontend) - Vite UI source
+- [`assets/app/`](./assets/app) - built UI assets served by helper
+- [`ops/dsm/`](./ops/dsm) - DSM lifecycle and deploy scripts
+- [`test/`](./test) - automated tests
 
 ## Tests
 

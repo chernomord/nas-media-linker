@@ -3,3 +3,28 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  .section-subheader {
+    @apply mt-0.5 text-sm leading-5 text-slate-600;
+  }
+
+  .header-action-button::part(base) {
+    background-color: rgba(248, 250, 252, 0.25);
+    border-color: rgba(226, 232, 240, 0.18);
+    color: #f8fafc;
+    backdrop-filter: blur(10px);
+  }
+
+  .header-action-button::part(base):hover {
+    background-color: rgba(248, 250, 252, 0.33);
+    border-color: rgba(226, 232, 240, 0.26);
+    color: #ffffff;
+  }
+
+  .header-action-button::part(base):active {
+    background-color: rgba(248, 250, 252, 0.4);
+    border-color: rgba(226, 232, 240, 0.34);
+    color: #ffffff;
+  }
+}
