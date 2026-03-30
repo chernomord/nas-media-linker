@@ -25,10 +25,12 @@ Helper‑сервис для линковки медиа на Synology NAS. UI �
 - Bash (rollback path only)
 
 ## Список файлов
-- `helper.mjs` — Express API, auth/session, executors, UX state API, раздача UI.
-- `ui.html` — основной app shell.
-- `login.html` — login shell для unauthenticated entry.
-- `frontend/app.js`, `frontend/app.css` — Vite source для UI assets.
+- `server.mjs` — canonical server entrypoint.
+- `helper.mjs` — compatibility shim для legacy entrypoint name.
+- `src/server/app.mjs` — Express API, auth/session, executors, UX state API, раздача UI.
+- `src/templates/app-shell.html` — основной app shell.
+- `src/templates/login-shell.html` — login shell для unauthenticated entry.
+- `src/ui/app.js`, `src/ui/app.css` — Vite source для UI assets.
 - `assets/app/` — helper-served built UI assets.
 - `lib/executor.mjs` — primary Node executor + bash rollback integration.
 - `lib/saved-templates-store.mjs` — sqlite-backed UX state store.

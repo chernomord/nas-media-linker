@@ -5,7 +5,7 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const HELPER_PATH = path.join(REPO_ROOT, "helper.mjs");
+const SERVER_PATH = path.join(REPO_ROOT, "server.mjs");
 
 test("configured Plex discover token is used server-side but not leaked to delivered responses", () => {
   const token = "plex-discover-secret-token";
@@ -13,8 +13,8 @@ test("configured Plex discover token is used server-side but not leaked to deliv
     import { once } from "node:events";
     import { pathToFileURL } from "node:url";
 
-    const helperUrl = pathToFileURL(${JSON.stringify(HELPER_PATH)}).href;
-    const { createApp } = await import(helperUrl);
+    const serverUrl = pathToFileURL(${JSON.stringify(SERVER_PATH)}).href;
+    const { createApp } = await import(serverUrl);
 
     const observed = { urlContainsToken: false, headerContainsToken: false };
     const originalFetch = globalThis.fetch;

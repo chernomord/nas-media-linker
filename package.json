@@ -4,6 +4,8 @@
   "main": "index.js",
   "description": "NAS-hosted helper for normalizing torrent folders into Plex-friendly movie and TV hardlink layouts.",
   "scripts": {
+    "start": "node --experimental-sqlite server.mjs",
+    "start:local": "node --experimental-sqlite server.mjs",
     "build:ui": "vite build",
     "test": "node --experimental-sqlite --test"
   },

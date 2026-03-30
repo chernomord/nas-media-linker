@@ -68,10 +68,10 @@ npm ci
 npm run build:ui
 ```
 
-3. Start the helper directly:
+3. Start the server directly:
 
 ```sh
-node --experimental-sqlite helper.mjs
+node --experimental-sqlite server.mjs
 ```
 
 4. Open `http://127.0.0.1:8787`.
@@ -84,9 +84,9 @@ Notes:
 - metadata search and real NAS operations may still be unavailable or only partially representative without the corresponding env/path setup
 - rebuild UI assets with `npm run build:ui` after frontend changes that affect the served bundle
 
-### Local helper mode with explicit env
+### Local server mode with explicit env
 
-Use this if you want a fuller local helper run with your own exported env values.
+Use this if you want a fuller local server run with your own exported env values.
 
 1. Install dependencies:
 
@@ -196,12 +196,14 @@ Metadata search is optional. Core linking and folder browsing work without it.
 
 ## Repository Layout
 
-- [`helper.mjs`](./helper.mjs) - helper API, auth/session, UI templating
+- [`server.mjs`](./server.mjs) - canonical server entrypoint
+- [`helper.mjs`](./helper.mjs) - compatibility shim for the legacy entrypoint name
+- [`src/server/app.mjs`](./src/server/app.mjs) - Express app assembly, auth/session, executors, UI templating
 - [`lib/executor.mjs`](./lib/executor.mjs) - primary Node executor and bash rollback integration
 - [`lib/saved-templates-store.mjs`](./lib/saved-templates-store.mjs) - sqlite-backed saved-template storage
-- [`ui.html`](./ui.html) - app shell
-- [`login.html`](./login.html) - login shell
-- [`frontend/`](./frontend) - Vite UI source
+- [`src/templates/app-shell.html`](./src/templates/app-shell.html) - authenticated app shell template
+- [`src/templates/login-shell.html`](./src/templates/login-shell.html) - unauthenticated login shell template
+- [`src/ui/`](./src/ui) - Vite UI source
 - [`assets/app/`](./assets/app) - built UI assets served by helper
 - [`ops/dsm/`](./ops/dsm) - DSM lifecycle and deploy scripts
 - [`test/`](./test) - automated tests

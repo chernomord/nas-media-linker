@@ -7,7 +7,7 @@ export default defineConfig({
     outDir: "assets/app",
     emptyOutDir: true,
     rollupOptions: {
-      input: path.resolve("frontend/app.js"),
+      input: path.resolve("src/ui/app.js"),
       output: {
         entryFileNames: "app.js",
         chunkFileNames: "chunks/[name]-[hash].js",

@@ -15,7 +15,7 @@ fi
 ensure_runtime_dirs
 
 cd "$APP_DIR"
-nohup "$NODE_BIN" "$NODE_SQLITE_FLAG" helper.mjs >>"$LOG_FILE" 2>&1 &
+nohup "$NODE_BIN" "$NODE_SQLITE_FLAG" server.mjs >>"$LOG_FILE" 2>&1 &
 pid=$!
 echo "$pid" > "$PID_FILE"
 

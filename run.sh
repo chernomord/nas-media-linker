@@ -30,4 +30,4 @@ export PLEX_DISCOVER_DRM="${PLEX_DISCOVER_DRM:-fairplay}"
 export PLEX_DISCOVER_LANGUAGE="${PLEX_DISCOVER_LANGUAGE:-en}"
 export OMDB_API_KEY="${OMDB_API_KEY:-replace_me}"
 
-node --experimental-sqlite helper.mjs
+node --experimental-sqlite server.mjs

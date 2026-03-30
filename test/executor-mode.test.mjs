@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { mkdtemp, rm } from "node:fs/promises";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const HELPER_PATH = path.join(REPO_ROOT, "helper.mjs");
+const SERVER_PATH = path.join(REPO_ROOT, "server.mjs");
 
 function waitForOpen(child, stdoutChunks, stderrChunks) {
   return new Promise((resolve, reject) => {
@@ -79,7 +79,7 @@ test("helper starts in node mode without SSH rollback env", async () => {
   const base = await mkdtemp(path.join(os.tmpdir(), "nas-linker-node-mode-"));
   const stdoutChunks = [];
   const stderrChunks = [];
-  const child = spawn(process.execPath, ["--experimental-sqlite", HELPER_PATH], {
+  const child = spawn(process.execPath, ["--experimental-sqlite", SERVER_PATH], {
     cwd: REPO_ROOT,
     env: {
       ...process.env,
@@ -103,7 +103,7 @@ test("helper starts in node mode without SSH rollback env", async () => {
 
 test("helper fails fast in bash mode without SSH rollback env", async () => {
   const base = await mkdtemp(path.join(os.tmpdir(), "nas-linker-bash-mode-"));
-  const child = spawn(process.execPath, ["--experimental-sqlite", HELPER_PATH], {
+  const child = spawn(process.execPath, ["--experimental-sqlite", SERVER_PATH], {
     cwd: REPO_ROOT,
     env: {
       ...process.env,
@@ -128,7 +128,7 @@ test("helper fails fast in bash mode without SSH rollback env", async () => {
 
 test("helper fails fast with invalid PORT value", async () => {
   const base = await mkdtemp(path.join(os.tmpdir(), "nas-linker-bad-port-"));
-  const child = spawn(process.execPath, ["--experimental-sqlite", HELPER_PATH], {
+  const child = spawn(process.execPath, ["--experimental-sqlite", SERVER_PATH], {
     cwd: REPO_ROOT,
     env: {
       ...process.env,
@@ -151,7 +151,7 @@ test("helper fails fast with invalid PORT value", async () => {
 test("helper fails fast in bash mode when NAS_KEY_PATH does not exist", async () => {
   const base = await mkdtemp(path.join(os.tmpdir(), "nas-linker-bad-key-"));
   const missingKeyPath = path.join(base, "missing.key");
-  const child = spawn(process.execPath, ["--experimental-sqlite", HELPER_PATH], {
+  const child = spawn(process.execPath, ["--experimental-sqlite", SERVER_PATH], {
     cwd: REPO_ROOT,
     env: {
       ...process.env,

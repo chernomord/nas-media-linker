@@ -8,7 +8,7 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 
 import { createExecutor, TORRENTS_ROOT } from "../lib/executor.mjs";
 import { createSavedTemplatesStore } from "../lib/saved-templates-store.mjs";
-import { createApp } from "../helper.mjs";
+import { createApp } from "../server.mjs";
 
 function createPasswordHash(password) {
   const salt = "0123456789abcdef";
@@ -500,7 +500,7 @@ test("helper serves the full local UI bootstrap graph used by the page", async (
       "built bundle must define every Shoelace component the page uses",
     );
 
-    const uiSource = await readFile(new URL("../ui.html", import.meta.url), "utf8");
+    const uiSource = await readFile(new URL("../src/templates/app-shell.html", import.meta.url), "utf8");
     const iconNames = collectUiIconNames(uiSource);
     assert.ok(iconNames.length > 0);
 

@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { mkdtemp, rm } from "node:fs/promises";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const HELPER_PATH = path.join(REPO_ROOT, "helper.mjs");
+const SERVER_PATH = path.join(REPO_ROOT, "server.mjs");
 
 function waitForOpen(child, stdoutChunks, stderrChunks) {
   return new Promise((resolve, reject) => {
@@ -62,7 +62,7 @@ test("helper startup logs do not contain runtime token or discover token", async
   const discoverToken = "plex-discover-secret-token";
   const stdoutChunks = [];
   const stderrChunks = [];
-  const child = spawn(process.execPath, ["--experimental-sqlite", HELPER_PATH], {
+  const child = spawn(process.execPath, ["--experimental-sqlite", SERVER_PATH], {
     cwd: REPO_ROOT,
     env: {
       ...process.env,

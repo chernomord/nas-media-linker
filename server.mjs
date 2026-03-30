@@ -1,9 +1,9 @@
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { createApp, startServer } from "./server.mjs";
+import { createApp, startServer } from "./src/server/app.mjs";
 
-export { createApp, startServer } from "./server.mjs";
+export { createApp, startServer } from "./src/server/app.mjs";
 
 const IS_MAIN = (() => {
   if (!process.argv[1]) return false;
