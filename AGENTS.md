@@ -378,7 +378,7 @@ Historical roadmap sections below may mention the retired SSH/bash rollback path
 ```
 
 ### v1.1 migration profile
-Цель migration profile: описать переход от `local helper on Mac -> SSH -> NAS bash` к `NAS-hosted always-on helper on DSM` без изменения пользовательского API и без преждевременного смешения с `v1.2`.
+Historical migration profile for the retired pre-Node execution model. It records the transition from `local helper on Mac -> SSH -> NAS bash` to `NAS-hosted always-on helper on DSM` without changing the user-facing API.
 
 ```yaml
 - phase: freeze_execution_semantics
@@ -390,7 +390,7 @@ Historical roadmap sections below may mention the retired SSH/bash rollback path
     - helper still invokes the canonical bash entrypoint
   rationale:
     why_this_phase: deployment migration must not silently become execution migration
-    tradeoff: same-host SSH loopback is transitional and operationally inelegant
+    tradeoff: the then-current same-host SSH loopback was transitional and operationally inelegant
 
 - phase: move_helper_to_dsm
   objective:
@@ -453,9 +453,9 @@ runtime_topology:
     upstream: 127.0.0.1:8787
     exposure: LAN + WireGuard only
   executor:
-    mode: transitional
+    status: retired_historical_path
     path: helper -> SSH(loopback or NAS LAN IP) -> /bin/bash linkmedia.sh
-    reason: preserve current execution semantics until v1.2
+    reason: preserved execution semantics during the v1.1 -> v1.2 migration window
 
 configuration_split:
   in_repo:
@@ -476,7 +476,7 @@ ops_constraints:
   - prefer explicit lifecycle scripts over direct Task Scheduler command duplication
   - prefer one boot task and one manual restart task over multiple hidden DSM automations
 
-rollback_model:
+historical_rollback_model:
   trigger:
     - DSM deployment unstable
     - auth path incomplete
@@ -488,8 +488,8 @@ rollback_model:
     - execution path to linkmedia.sh remains available throughout v1.1
 ```
 
-### Current v1.1 profile
-Текущее зафиксированное deployment profile:
+### Historical v1.1 Profile Snapshot
+Historical deployment snapshot:
 
 ```yaml
 status:
@@ -506,6 +506,7 @@ status:
     deploy: DSM manual task -> deploy-helper.sh
     status: ops/dsm/status-helper.sh
   executor_path: helper -> SSH -> linkmedia.sh
+  note: retained here only as historical deployment context; current runtime is node-only
 
 notes:
   - helper direct port stays loopback-only
@@ -515,13 +516,13 @@ notes:
   - current auth/login UX is further refined by v1.5 session model, but deployment boundary remains the same
 ```
 
-### Post-rollout lessons (`v1.1`)
-Это не новые guardrails, а зафиксированные operational findings после реального DSM cutover.
+### Historical Post-Rollout Lessons (`v1.1`)
+These are preserved operational findings from the real DSM cutover, not current guardrails.
 
 ```yaml
 findings:
   - lifecycle must be treated as a first-class artifact; direct Task Scheduler "Run" is not a restart strategy
-  - runtime user must own and be able to read its private SSH key used for same-host SSH execution
+  - at that time, same-host SSH execution required a readable runtime-user private key
   - shell-sourced env files must be shell-safe:
       - values with spaces require double quotes
       - values with '$' require single quotes when no expansion is desired
@@ -532,7 +533,7 @@ findings:
 
 ## Roadmap (v1.2)
 ### Step: Node-native linker execution (deprecate bash logic)
-Цель шага: перенести выполнение операций `linkmovie/linkseason/listdir` из NAS bash-скрипта в Node.js executor с сохранением текущего API-контракта и guardrails. Миграция должна повысить поддерживаемость, расширяемость и предсказуемость поведения без функционального регресса для UI.
+Historical migration step for replacing the retired NAS bash execution path with the current Node.js executor while preserving API contracts and guardrails.
 
 Current implementation checkpoint:
 
@@ -541,20 +542,14 @@ Current implementation checkpoint:
   status: done
   executor_boundary:
     state: extracted into helper-facing executor module
-  feature_flag:
-    env: EXECUTOR_MODE
-    allowed_values: [bash, node]
   current_behavior:
-    bash:
-      - retained as rollback path
-      - linkmovie uses SSH -> bash
-      - linkseason uses SSH -> bash
-      - listdir uses SSH -> bash
     node:
       - default primary path
       - listdir uses local Node execution on DSM
       - linkmovie uses local Node execution on DSM
       - linkseason uses local Node execution on DSM
+    retired_historical_context:
+      - migration temporarily kept a bash/SSH path for parity and rollback confidence
   invariant:
     - API/UI contract remains unchanged
   validation_status:
@@ -563,7 +558,7 @@ Current implementation checkpoint:
     - linkseason confirmed in real DSM runtime
   automated_test_status:
     - node:test covers listdir/linkmovie/linkseason contracts and core guardrails on temp fixtures
-    - bash-vs-node dual-run parity harness covers listdir/linkmovie/linkseason locally
+    - historical migration included a temporary bash-vs-node parity harness, now retired
 ```
 
 Completion state:
@@ -575,8 +570,7 @@ Completion state:
     - Node executor is the default path in target deployment
     - API response shapes remain unchanged from frozen contracts
     - guardrails were preserved while path validation and allowlist behavior stayed in helper/node executor
-    - parity tests pass for listdir/linkmovie/linkseason
-    - bash rollback path remains documented and validated
+    - migration-time parity evidence existed for listdir/linkmovie/linkseason
     - bash logic is no longer required for normal NAS-hosted operation
 ```
 
@@ -652,7 +646,7 @@ Completion state:
   rationale:
     risk_addressed: non-obvious incompatibilities
     why_this_constraint: migration confidence must be evidence-based
-    tradeoff: temporary duplicated execution cost
+  tradeoff: temporary duplicated execution cost
 
 - action: add
   name: Cutover + rollback switch
@@ -667,11 +661,11 @@ Completion state:
   rationale:
     risk_addressed: outage during rollout
     why_this_constraint: operational reversibility is mandatory
-    tradeoff: short-term complexity from dual path support
+    tradeoff: short-term migration complexity from temporary dual-path support
 
 - action: update
   target: listdir output format (type|name|size|mtime)
-  change: enforcement source moves from linkmedia.sh to helper/node executor after cutover
+  change: enforcement source moved from linkmedia.sh to helper/node executor after cutover
   rationale:
     risk_addressed: parser instability in UI
     why_this_constraint: format remains invariant despite implementation change
@@ -679,11 +673,11 @@ Completion state:
 
 - action: update
   target: SSH execution via /bin/bash
-  change: retained only for rollback path; primary path becomes local Node execution on NAS-hosted mode
+  change: historical migration temporarily retained it while the primary path became local Node execution on NAS-hosted mode
   rationale:
     risk_addressed: unnecessary shell dependency
     why_this_constraint: reduce runtime coupling to bash semantics
-    tradeoff: transitional period with two execution modes
+    tradeoff: temporary two-path migration period
 
 - action: define
   name: Done criteria for v1.2
@@ -693,8 +687,7 @@ Completion state:
     - Node executor is default path in target deployment
     - API response shapes unchanged from frozen contracts
     - guardrails preserved or strengthened (no invariant weakening)
-    - parity tests pass for all critical operations
-    - rollback path documented and validated
+    - migration-time parity evidence exists for critical operations
     - bash logic no longer required for normal operation
   failure_mode: incomplete migration declared as finished
   rationale:
