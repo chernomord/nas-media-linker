@@ -1,5 +1,7 @@
 # nas-linker
 
+[Русская версия](./README.ru.md)
+
 Helper service for turning torrent folders on a Synology NAS into deterministic movie and TV hardlink layouts that Plex can index reliably.
 
 The tool serves a browser UI, validates paths on the server, and executes link operations on the NAS. In the current baseline:
