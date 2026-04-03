@@ -3,6 +3,7 @@ import { messages } from "./messages.js";
 const DEFAULT_LOCALE = "en";
 const SUPPORTED_LOCALES = new Set(["en", "ru"]);
 const STORAGE_KEY = "nas_linker_locale";
+const LOCALE_CHANGE_EVENT = "nas-linker:localechange";
 
 let currentLocale = DEFAULT_LOCALE;
 
@@ -47,12 +48,15 @@ export function detectInitialLocale() {
 }
 
 export function setLocale(locale) {
-  currentLocale = normalizeLocale(locale);
+  const nextLocale = normalizeLocale(locale);
+  const changed = nextLocale !== currentLocale;
+  currentLocale = nextLocale;
   try {
     localStorage.setItem(STORAGE_KEY, currentLocale);
   } catch {
     // Ignore persistence failures; locale still applies for this page load.
   }
+  return changed;
 }
 
 export function initI18n() {
@@ -94,6 +98,14 @@ function updateLocaleSwitcherState(root = document) {
   }
 }
 
+function emitLocaleChange() {
+  document.dispatchEvent(
+    new CustomEvent(LOCALE_CHANGE_EVENT, {
+      detail: { locale: currentLocale },
+    }),
+  );
+}
+
 export function initLocaleSwitchers(root = document) {
   for (const switcher of root.querySelectorAll("[data-locale-switcher]")) {
     if (switcher.dataset.localeBound === "true") continue;
@@ -104,8 +116,15 @@ export function initLocaleSwitchers(root = document) {
       const nextLocale = normalizeLocale(button.dataset.locale);
       if (nextLocale === currentLocale) return;
       setLocale(nextLocale);
-      window.location.reload();
+      applyTranslations(document);
+      updateLocaleSwitcherState(document);
+      emitLocaleChange();
     });
   }
   updateLocaleSwitcherState(root);
+}
+
+export function onLocaleChange(listener) {
+  document.addEventListener(LOCALE_CHANGE_EVENT, listener);
+  return () => document.removeEventListener(LOCALE_CHANGE_EVENT, listener);
 }

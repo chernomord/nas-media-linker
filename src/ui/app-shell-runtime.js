@@ -1,4 +1,4 @@
-import { t } from "./i18n/index.js";
+import { onLocaleChange, t } from "./i18n/index.js";
 
 function onReady(callback) {
   if (document.readyState === "loading") {
@@ -301,6 +301,9 @@ function initAppShell() {
   let savedItemsError = "";
   let logText = "";
   let sessionFailureState = null;
+  let listedRoot = "";
+  let listedItems = [];
+  let listErrorText = "";
 
   function renderLog() {
     $("log").textContent = logText;
@@ -826,6 +829,92 @@ function initAppShell() {
     }
   }
 
+  function renderBrowseList(root, items) {
+    const ul = $("list");
+    ul.innerHTML = "";
+    for (const it of items) {
+      const li = document.createElement("li");
+      li.className = "border-b border-slate-100 last:border-b-0 py-1.5 text-slate-800 min-w-0 overflow-hidden";
+
+      const row = document.createElement("div");
+      row.className = "flex w-full items-center gap-2 min-w-0 overflow-hidden";
+
+      const label = document.createElement("div");
+      label.className = "flex w-0 min-w-0 flex-1 items-center gap-2 overflow-hidden";
+      const icon = document.createElement("sl-icon");
+      icon.setAttribute("name", it.type === "d" ? "folder" : "film");
+      icon.className = `${it.type === "d" ? "text-amber-600" : "text-slate-500"} flex-shrink-0`;
+      label.appendChild(icon);
+      const nameTip = document.createElement("sl-tooltip");
+      nameTip.className = "list-name-tooltip";
+      nameTip.content = it.name;
+      nameTip.setAttribute("placement", "top");
+      const text = document.createElement("span");
+      text.className = "block truncate";
+      text.textContent = it.name;
+      text.title = it.name;
+      nameTip.appendChild(text);
+      label.appendChild(nameTip);
+      row.appendChild(label);
+
+      const actions = document.createElement("div");
+      actions.className = "ml-2 flex items-center gap-2 text-xs flex-shrink-0";
+
+      const copyBtn = document.createElement("sl-button");
+      copyBtn.setAttribute("size", "small");
+      copyBtn.setAttribute("variant", "text");
+      const copyIcon = document.createElement("sl-icon");
+      copyIcon.setAttribute("name", "clipboard");
+      copyIcon.className = "text-emerald-600";
+      copyBtn.appendChild(copyIcon);
+      const copyTip = document.createElement("sl-tooltip");
+      copyTip.content = t("browse.copy_path");
+      copyTip.setAttribute("trigger", "manual");
+      copyTip.hoist = true;
+      copyTip.appendChild(copyBtn);
+      copyBtn.onclick = async () => {
+        const path = `${root}/${it.name}`;
+        try {
+          await navigator.clipboard.writeText(path);
+          showCopied(copyTip);
+        } catch {
+          const ok = fallbackCopy(path);
+          if (ok) {
+            showCopied(copyTip);
+          } else {
+            log(t("browse.clipboard_error"));
+          }
+        }
+      };
+      actions.appendChild(copyTip);
+
+      const fillBtn = document.createElement("sl-button");
+      fillBtn.setAttribute("size", "small");
+      fillBtn.setAttribute("variant", "text");
+      const listFillIcon = document.createElement("sl-icon");
+      listFillIcon.setAttribute("name", "box-arrow-in-right");
+      listFillIcon.className = "text-blue-600";
+      fillBtn.appendChild(listFillIcon);
+      const fillTip = document.createElement("sl-tooltip");
+      fillTip.content = t("browse.fill_inputs");
+      fillTip.appendChild(fillBtn);
+      fillBtn.onclick = () => {
+        if (it.type === "d") {
+          $("m_src").value = `${root}/${it.name}`;
+          $("s_src").value = `${root}/${it.name}`;
+          flashField("m_src");
+          flashField("s_src");
+          syncRunButtons();
+        }
+      };
+      actions.appendChild(fillTip);
+
+      row.appendChild(actions);
+      li.appendChild(row);
+      ul.appendChild(li);
+    }
+  }
+
   function openPreviewModal(url) {
     if (!url) return;
     const modal = $("preview_modal");
@@ -1154,96 +1243,24 @@ function initAppShell() {
     $("list").classList.remove("hidden");
     if (isSessionExpiredResult(result)) {
       log(t("browse.session_expired"));
+      listedRoot = root;
+      listedItems = [];
+      listErrorText = t("browse.session_expired");
       return;
     }
     const data = result.data || {};
     if (!data.ok) {
-      log(data.stderr || "error");
+      const errorText = data.stderr || "error";
+      log(errorText);
+      listedRoot = root;
+      listedItems = [];
+      listErrorText = errorText;
       return;
     }
-
-    const ul = $("list");
-    ul.innerHTML = "";
-    for (const it of data.items) {
-      const li = document.createElement("li");
-      li.className = "border-b border-slate-100 last:border-b-0 py-1.5 text-slate-800 min-w-0 overflow-hidden";
-
-      const tooltip = document.createElement("sl-tooltip");
-      tooltip.content = it.name;
-      tooltip.setAttribute("placement", "top");
-
-      const row = document.createElement("div");
-      row.className = "flex w-full items-center gap-2 min-w-0 overflow-hidden";
-
-      const label = document.createElement("span");
-      label.className = "truncate flex-1 min-w-0 max-w-full flex items-center gap-2";
-      const icon = document.createElement("sl-icon");
-      icon.setAttribute("name", it.type === "d" ? "folder" : "film");
-      icon.className = `${it.type === "d" ? "text-amber-600" : "text-slate-500"} flex-shrink-0`;
-      label.appendChild(icon);
-      const text = document.createElement("span");
-      text.className = "truncate";
-      text.textContent = it.name;
-      label.appendChild(text);
-      row.appendChild(label);
-
-      const actions = document.createElement("div");
-      actions.className = "ml-2 flex items-center gap-2 text-xs flex-shrink-0";
-
-      const copyBtn = document.createElement("sl-button");
-      copyBtn.setAttribute("size", "small");
-      copyBtn.setAttribute("variant", "text");
-      const copyIcon = document.createElement("sl-icon");
-      copyIcon.setAttribute("name", "clipboard");
-      copyIcon.className = "text-emerald-600";
-      copyBtn.appendChild(copyIcon);
-      const copyTip = document.createElement("sl-tooltip");
-      copyTip.content = t("browse.copy_path");
-      copyTip.setAttribute("trigger", "manual");
-      copyTip.hoist = true;
-      copyTip.appendChild(copyBtn);
-      copyBtn.onclick = async () => {
-        const path = `${root}/${it.name}`;
-        try {
-          await navigator.clipboard.writeText(path);
-          showCopied(copyTip);
-        } catch {
-          const ok = fallbackCopy(path);
-          if (ok) {
-            showCopied(copyTip);
-          } else {
-            log(t("browse.clipboard_error"));
-          }
-        }
-      };
-      actions.appendChild(copyTip);
-
-      const fillBtn = document.createElement("sl-button");
-      fillBtn.setAttribute("size", "small");
-      fillBtn.setAttribute("variant", "text");
-      const listFillIcon = document.createElement("sl-icon");
-      listFillIcon.setAttribute("name", "box-arrow-in-right");
-      listFillIcon.className = "text-blue-600";
-      fillBtn.appendChild(listFillIcon);
-      const fillTip = document.createElement("sl-tooltip");
-      fillTip.content = t("browse.fill_inputs");
-      fillTip.appendChild(fillBtn);
-      fillBtn.onclick = () => {
-        if (it.type === "d") {
-          $("m_src").value = `${root}/${it.name}`;
-          $("s_src").value = `${root}/${it.name}`;
-          flashField("m_src");
-          flashField("s_src");
-          syncRunButtons();
-        }
-      };
-      actions.appendChild(fillTip);
-
-      row.appendChild(actions);
-      tooltip.appendChild(row);
-      li.appendChild(tooltip);
-      ul.appendChild(li);
-    }
+    listedRoot = root;
+    listedItems = data.items ?? [];
+    listErrorText = "";
+    renderBrowseList(listedRoot, listedItems);
   };
 
   $("m_title").addEventListener("input", debouncedMoviePreview);
@@ -1274,6 +1291,20 @@ function initAppShell() {
     }
     if (sWrap && !sWrap.contains(event.target)) {
       hideAutocomplete("s_ac");
+    }
+  });
+
+  onLocaleChange(() => {
+    renderSaved();
+    if (listedItems.length > 0) {
+      renderBrowseList(listedRoot, listedItems);
+    }
+    if (sessionFailureState) {
+      $("session_message").textContent = t(sessionFailureState.messageKey);
+      $("session_hint").textContent = t(sessionFailureState.hintKey);
+    }
+    if (listErrorText) {
+      log(listErrorText);
     }
   });
 

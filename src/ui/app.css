@@ -212,6 +212,14 @@ body.app-shell-page main > header .text-slate-500 {
   color: #f8fafc;
 }
 
+.list-name-tooltip {
+  display: block;
+  width: 0;
+  min-width: 0;
+  flex: 1 1 0%;
+  max-width: 100%;
+}
+
 sl-card {
   color: var(--sl-color-neutral-900);
 }
