@@ -307,6 +307,21 @@ Historical migration details and retired runtime paths are preserved in [`docs/r
     tradeoff: extra rendering cost
 ```
 
+## Testing Boundaries
+- `node:test` remains the default automated test layer for contracts, invariants, auth/session rules, executor behavior, and static asset bootstrap.
+- Browser-level UI regression testing is justified only for risks that server/unit tests cannot see:
+  - layout overflow and truncation failures
+  - tooltip/hover affordance regressions
+  - locale-switch rendering issues
+  - other DOM/CSS interaction bugs that require a real browser engine
+- If browser-level testing is introduced later, it must stay intentionally narrow:
+  - prefer 1-3 targeted guardrail tests over a broad end-to-end suite
+  - use layout assertions first; screenshot comparisons are secondary and should cover only a few high-value states
+  - do not make Playwright the primary test harness for the whole project
+- Current status:
+  - browser-level visual regression tooling is deferred
+  - expected future role is a thin, optional guardrail layer for a few known-fragile UI cases
+
 ## Planning Docs
 - Active and historical roadmap material lives in [`docs/roadmap.md`](./docs/roadmap.md).
 - `AGENTS.md` is the current-model file: goals, active guardrails, design decisions, and non-goals belong here.

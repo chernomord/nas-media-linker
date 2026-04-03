@@ -8,6 +8,12 @@ function onReady(callback) {
   callback();
 }
 
+function isSafariBrowser() {
+  const userAgent = navigator.userAgent || "";
+  const vendor = navigator.vendor || "";
+  return /Safari/i.test(userAgent) && /Apple/i.test(vendor) && !/CriOS|Chrome|Chromium|Edg|FxiOS/i.test(userAgent);
+}
+
 function initBackgroundEffect() {
   if (!document.body?.classList.contains("app-shell-page")) {
     return;
@@ -294,6 +300,7 @@ function initAppShell() {
     movies: document.body.dataset.rootMovies || "",
     tv: document.body.dataset.rootTv || "",
   };
+  const USE_NATIVE_NAME_TOOLTIP = isSafariBrowser();
 
   let pendingDeleteId = null;
   let savedItemsCache = [];
@@ -846,15 +853,20 @@ function initAppShell() {
       icon.className = `${it.type === "d" ? "text-amber-600" : "text-slate-500"} flex-shrink-0`;
       label.appendChild(icon);
       const nameTip = document.createElement("sl-tooltip");
-      nameTip.className = "list-name-tooltip";
-      nameTip.content = it.name;
-      nameTip.setAttribute("placement", "top");
       const text = document.createElement("span");
-      text.className = "block truncate";
+      text.className = "block min-w-0 truncate";
       text.textContent = it.name;
-      text.title = it.name;
-      nameTip.appendChild(text);
-      label.appendChild(nameTip);
+      if (USE_NATIVE_NAME_TOOLTIP) {
+        text.title = it.name;
+        label.appendChild(text);
+      } else {
+        nameTip.className = "list-name-tooltip";
+        nameTip.content = it.name;
+        nameTip.setAttribute("placement", "top");
+        nameTip.hoist = true;
+        nameTip.appendChild(text);
+        label.appendChild(nameTip);
+      }
       row.appendChild(label);
 
       const actions = document.createElement("div");
