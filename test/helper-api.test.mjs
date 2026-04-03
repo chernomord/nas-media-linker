@@ -142,6 +142,9 @@ test("root returns login shell when session auth is configured and no session ex
     const html = await resp.text();
     assert.equal(resp.status, 200);
     assert.match(html, /Sign in to continue/);
+    assert.match(html, /data-page-title-key="page\.login\.title"/);
+    assert.match(html, /data-locale-switcher/);
+    assert.match(html, /data-i18n="login\.title"/);
     assert.doesNotMatch(html, /data-run-token="test-token"/);
   });
 });
@@ -339,6 +342,9 @@ test("successful session login makes root return the app shell", async () => {
     assert.equal(resp.status, 200);
     assert.match(html, /data-run-token="test-token"/);
     assert.match(html, /id="logout_btn"/);
+    assert.match(html, /data-page-title-key="page\.app\.title"/);
+    assert.match(html, /data-locale-switcher/);
+    assert.match(html, /data-i18n="header\.title"/);
     assert.doesNotMatch(html, /Sign in to continue/);
   });
 });
@@ -446,6 +452,67 @@ test("root html boots from local static assets without external CDN URLs", async
     assert.ok(js.length > 0);
     assert.match(js, /\/assets\/vendor\/bootstrap-icons\/icons\//);
     assert.doesNotMatch(js, /cdn\.jsdelivr\.net|unpkg\.com|fonts\.googleapis\.com|shoelace\.style|esm\.sh|tailwindcss\.com/);
+  });
+});
+
+test("helper shells expose i18n hooks for title, locale switcher, and translated controls", async () => {
+  const app = createApp({
+    runToken: "test-token",
+    appAuthUser: "operator",
+    appAuthPasswordHash: createPasswordHash("secret"),
+    executor: {
+      async linkMovie() { return { code: 0, stdout: "", stderr: "" }; },
+      async linkSeason() { return { code: 0, stdout: "", stderr: "" }; },
+      async listDir() { return { ok: true, code: 0, items: [] }; },
+    },
+    savedTemplatesStore: makeSavedTemplatesStore(),
+  });
+
+  await withServer(app, async (baseUrl) => {
+    const loginResp = await fetch(`${baseUrl}/`);
+    assert.equal(loginResp.status, 200);
+    const loginHtml = await loginResp.text();
+    assert.match(loginHtml, /data-page-title-key="page\.login\.title"/);
+    assert.match(loginHtml, /data-locale-switcher/);
+    assert.match(loginHtml, /data-i18n="login\.submit"/);
+
+    const { cookie } = await loginSession(baseUrl);
+    assert.ok(cookie);
+
+    const appResp = await fetch(`${baseUrl}/`, {
+      headers: authHeaders({ cookie }),
+    });
+    assert.equal(appResp.status, 200);
+    const appHtml = await appResp.text();
+    assert.match(appHtml, /data-page-title-key="page\.app\.title"/);
+    assert.match(appHtml, /data-locale-switcher/);
+    assert.match(appHtml, /data-i18n="header\.view_log"/);
+    assert.match(appHtml, /data-i18n-label="session\.dialog_label"/);
+  });
+});
+
+test("built UI bundle contains bilingual i18n messages and locale persistence hooks", async () => {
+  const app = createApp({
+    runToken: "test-token",
+    executor: {
+      async linkMovie() { return { code: 0, stdout: "", stderr: "" }; },
+      async linkSeason() { return { code: 0, stdout: "", stderr: "" }; },
+      async listDir() { return { ok: true, code: 0, items: [] }; },
+    },
+    savedTemplatesStore: makeSavedTemplatesStore(),
+  });
+
+  await withServer(app, async (baseUrl) => {
+    const jsResp = await fetch(`${baseUrl}/assets/app/app.js`);
+    assert.equal(jsResp.status, 200);
+    const js = await jsResp.text();
+
+    assert.match(js, /nas_linker_locale/);
+    assert.match(js, /locale\.switcher_aria/);
+    assert.match(js, /Sign in to continue/);
+    assert.match(js, /Войти, чтобы продолжить/);
+    assert.match(js, /Quick NAS linking console/);
+    assert.match(js, /Быстрая консоль линковки NAS/);
   });
 });
 
