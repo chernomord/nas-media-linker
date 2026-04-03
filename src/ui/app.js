@@ -1,4 +1,5 @@
 import "./app.css";
+import { initI18n } from "./i18n/index.js";
 import "./app-shell-runtime.js";
 import "./login-runtime.js";
 import "@shoelace-style/shoelace/dist/components/alert/alert.js";
@@ -17,6 +18,8 @@ import "@shoelace-style/shoelace/dist/components/tab-panel/tab-panel.js";
 import "@shoelace-style/shoelace/dist/components/tag/tag.js";
 import "@shoelace-style/shoelace/dist/components/tooltip/tooltip.js";
 import { registerIconLibrary } from "@shoelace-style/shoelace/dist/utilities/icon-library.js";
+
+initI18n();
 
 registerIconLibrary("default", {
   resolver: (name) => `/assets/vendor/bootstrap-icons/icons/${name}.svg`,

@@ -1,3 +1,5 @@
+import { t } from "./i18n/index.js";
+
 function onReady(callback) {
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", callback, { once: true });
@@ -49,7 +51,7 @@ function initLoginShell() {
       }
       window.location.replace("/");
     } catch {
-      setError("Login request failed");
+      setError(t("login.request_failed"));
       submit.disabled = false;
     }
   });

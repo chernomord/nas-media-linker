@@ -13,43 +13,48 @@
   data-root-torrents="__TORRENTS_ROOT__"
   data-root-movies="__MOVIES_ROOT__"
   data-root-tv="__TV_ROOT__"
+  data-page-title-key="page.app.title"
 >
   <main class="mx-auto max-w-[72rem] px-5 py-5 md:py-6">
     <header class="flex flex-col gap-y-3 md:flex-row md:items-start md:justify-between md:gap-x-4">
       <div class="space-y-2">
-        <p class="text-[0.7rem] uppercase tracking-[0.28em] text-slate-500">Synology linker</p>
-        <h1 class="text-2xl font-semibold leading-none tracking-[-0.03em] text-slate-900 md:text-4xl">Quick NAS linking console</h1>
+        <p class="text-[0.7rem] uppercase tracking-[0.28em] text-slate-500" data-i18n="app.brand">Synology linker</p>
+        <h1 class="text-2xl font-semibold leading-none tracking-[-0.03em] text-slate-900 md:text-4xl" data-i18n="header.title">Quick NAS linking console</h1>
       </div>
-      <div class="flex items-end gap-1 md:self-center">
-        <sl-button id="open_log" class="header-action-button" size="small">View log</sl-button>
-        <sl-button id="logout_btn" class="header-action-button" size="small">Logout</sl-button>
+      <div class="flex flex-wrap items-end gap-1 md:self-center">
+        <div class="locale-switcher" data-locale-switcher data-i18n-aria-label="locale.switcher_aria">
+          <button type="button" class="locale-switcher__button" data-locale="en">EN</button>
+          <button type="button" class="locale-switcher__button" data-locale="ru">RU</button>
+        </div>
+        <sl-button id="open_log" class="header-action-button" size="small" data-i18n="header.view_log">View log</sl-button>
+        <sl-button id="logout_btn" class="header-action-button" size="small" data-i18n="header.logout">Logout</sl-button>
       </div>
     </header>
 
-    <section aria-label="Linking workspace" class="mt-6 grid gap-y-5 gap-x-6 lg:grid-cols-2 lg:items-start">
-      <section aria-label="Link actions" class="min-w-0 grid gap-y-5">
+    <section aria-label="Linking workspace" data-i18n-aria-label="workspace.aria" class="mt-6 grid gap-y-5 gap-x-6 lg:grid-cols-2 lg:items-start">
+      <section aria-label="Link actions" data-i18n-aria-label="link_actions.aria" class="min-w-0 grid gap-y-5">
         <sl-card class="glass-card">
           <sl-tab-group value="season">
-            <sl-tab slot="nav" panel="season">Season</sl-tab>
-            <sl-tab slot="nav" panel="movie">Movie</sl-tab>
+            <sl-tab slot="nav" panel="season" data-i18n="tab.season">Season</sl-tab>
+            <sl-tab slot="nav" panel="movie" data-i18n="tab.movie">Movie</sl-tab>
 
             <sl-tab-panel name="season">
-              <h2 class="text-lg font-semibold text-slate-900">Season link</h2>
-              <p class="section-subheader">Создать сезонную структуру для сериала.</p>
+              <h2 class="text-lg font-semibold text-slate-900" data-i18n="season.title">Season link</h2>
+              <p class="section-subheader" data-i18n="season.subtitle">Create a season structure for a show.</p>
               <div class="mt-5 grid gap-3">
-                <div class="text-xs uppercase tracking-[0.2em] text-slate-500">Source folder</div>
-                <sl-input id="s_src" class="w-full" size="small" placeholder="__TORRENTS_ROOT__/Show Folder"></sl-input>
+                <div class="text-xs uppercase tracking-[0.2em] text-slate-500" data-i18n="season.source_label">Source folder</div>
+                <sl-input id="s_src" class="w-full" size="small" placeholder="__TORRENTS_ROOT__/Show Folder" data-i18n-placeholder="season.source_placeholder"></sl-input>
                 <div class="grid gap-3 md:grid-cols-[1fr_100px_120px]">
                   <div class="relative">
-                    <sl-input id="s_title" size="small" placeholder="Show title"></sl-input>
+                    <sl-input id="s_title" size="small" placeholder="Show title" data-i18n-placeholder="season.title_placeholder"></sl-input>
                     <div id="s_ac" class="absolute left-0 right-0 top-full z-10 mt-1 hidden max-h-64 overflow-auto rounded-xl border border-slate-200 bg-white/95 shadow"></div>
                   </div>
                   <sl-input id="s_season" size="small" placeholder="2"></sl-input>
                   <sl-input id="s_year" size="small" placeholder="2023"></sl-input>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
-                  <sl-button id="s_run" variant="success" size="small">Link season</sl-button>
-                  <sl-checkbox id="s_save" size="small">Save</sl-checkbox>
+                  <sl-button id="s_run" variant="success" size="small" data-i18n="season.run">Link season</sl-button>
+                  <sl-checkbox id="s_save" size="small" data-i18n="common.save">Save</sl-checkbox>
                 </div>
                 <sl-tag id="s_status" size="small" variant="neutral" class="mt-2 hidden"></sl-tag>
                 <div id="s_preview_list" class="mt-3 grid gap-3 hidden"></div>
@@ -57,21 +62,21 @@
             </sl-tab-panel>
 
             <sl-tab-panel name="movie">
-              <h2 class="text-lg font-semibold text-slate-900">Movie link</h2>
-              <p class="section-subheader">Связать одиночный файл фильма с библиотекой.</p>
+              <h2 class="text-lg font-semibold text-slate-900" data-i18n="movie.title">Movie link</h2>
+              <p class="section-subheader" data-i18n="movie.subtitle">Link a single movie file into the library.</p>
               <div class="mt-5 grid gap-3">
-                <div class="text-xs uppercase tracking-[0.2em] text-slate-500">Source path</div>
-                <sl-input id="m_src" class="w-full" size="small" placeholder="__TORRENTS_ROOT__/Movies/...file.mkv"></sl-input>
+                <div class="text-xs uppercase tracking-[0.2em] text-slate-500" data-i18n="movie.source_label">Source path</div>
+                <sl-input id="m_src" class="w-full" size="small" placeholder="__TORRENTS_ROOT__/Movies/...file.mkv" data-i18n-placeholder="movie.source_placeholder"></sl-input>
                 <div class="grid gap-3 md:grid-cols-[1fr_120px]">
                   <div class="relative">
-                    <sl-input id="m_title" size="small" placeholder="Title"></sl-input>
+                    <sl-input id="m_title" size="small" placeholder="Title" data-i18n-placeholder="movie.title_placeholder"></sl-input>
                     <div id="m_ac" class="absolute left-0 right-0 top-full z-10 mt-1 hidden max-h-64 overflow-auto rounded-xl border border-slate-200 bg-white/95 shadow"></div>
                   </div>
                   <sl-input id="m_year" size="small" placeholder="2025"></sl-input>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
-                  <sl-button id="m_run" variant="primary" size="small">Link movie</sl-button>
-                  <sl-checkbox id="m_save" size="small">Save</sl-checkbox>
+                  <sl-button id="m_run" variant="primary" size="small" data-i18n="movie.run">Link movie</sl-button>
+                  <sl-checkbox id="m_save" size="small" data-i18n="common.save">Save</sl-checkbox>
                 </div>
                 <sl-tag id="m_status" size="small" variant="neutral" class="mt-2 hidden"></sl-tag>
                 <div id="m_preview_list" class="mt-3 grid gap-3 hidden"></div>
@@ -81,23 +86,23 @@
         </sl-card>
       </section>
 
-      <aside aria-label="Saved items and NAS browser" class="min-w-0 grid gap-y-5">
+      <aside aria-label="Saved items and NAS browser" data-i18n-aria-label="saved_browser.aria" class="min-w-0 grid gap-y-5">
         <sl-card class="glass-card">
-          <h2 class="text-lg font-semibold text-slate-900">Saved</h2>
-          <p class="section-subheader">Быстрое заполнение форм.</p>
+          <h2 class="text-lg font-semibold text-slate-900" data-i18n="saved.title">Saved</h2>
+          <p class="section-subheader" data-i18n="saved.subtitle">Quick form fill.</p>
           <ul id="saved_list" class="mt-3 space-y-1 rounded-2xl border border-slate-200 bg-white/80 p-3 text-sm"></ul>
         </sl-card>
 
         <sl-card class="glass-card">
-          <h2 class="text-lg font-semibold text-slate-900">Browse NAS</h2>
-          <p class="section-subheader">Выбери корень и кликай по папкам.</p>
+          <h2 class="text-lg font-semibold text-slate-900" data-i18n="browse.title">Browse NAS</h2>
+          <p class="section-subheader" data-i18n="browse.subtitle">Choose a root and click through folders.</p>
           <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
             <sl-select id="root" size="small">
-            <sl-option value="torrents" data-path="__TORRENTS_ROOT__">Torrents</sl-option>
-            <sl-option value="movies" data-path="__MOVIES_ROOT__">Movies</sl-option>
-            <sl-option value="tv" data-path="__TV_ROOT__">TV Shows</sl-option>
+            <sl-option value="torrents" data-path="__TORRENTS_ROOT__" data-i18n="browse.root.torrents">Torrents</sl-option>
+            <sl-option value="movies" data-path="__MOVIES_ROOT__" data-i18n="browse.root.movies">Movies</sl-option>
+            <sl-option value="tv" data-path="__TV_ROOT__" data-i18n="browse.root.tv">TV Shows</sl-option>
             </sl-select>
-            <sl-button id="browse" size="small">List folders</sl-button>
+            <sl-button id="browse" size="small" data-i18n="browse.list_folders">List folders</sl-button>
           </div>
           <div id="list_loading" class="mt-4 hidden w-full min-w-0 space-y-2 rounded-2xl border border-slate-200 bg-white/80 p-3 text-sm">
             <sl-skeleton effect="sheen" class="block h-4 w-full"></sl-skeleton>
@@ -112,32 +117,32 @@
     </section>
   </main>
 
-  <sl-dialog id="confirm_delete" label="Удалить сохраненное?" class="sl-theme-light">
-    <p class="text-sm text-slate-700">Удалить этот элемент из Saved?</p>
+  <sl-dialog id="confirm_delete" label="Delete saved item?" data-i18n-label="saved.delete_dialog_label" class="sl-theme-light">
+    <p class="text-sm text-slate-700" data-i18n="saved.delete_dialog_body">Delete this item from Saved?</p>
     <div slot="footer" class="flex items-center justify-end gap-2">
-      <sl-button id="cancel_delete" variant="text">Cancel</sl-button>
-      <sl-button id="confirm_delete_btn" variant="danger">Delete</sl-button>
+      <sl-button id="cancel_delete" variant="text" data-i18n="common.cancel">Cancel</sl-button>
+      <sl-button id="confirm_delete_btn" variant="danger" data-i18n="saved.delete">Delete</sl-button>
     </div>
   </sl-dialog>
 
   <sl-dialog id="preview_modal" class="sl-theme-light" style="--width: min(90vw, 720px);">
-    <img id="preview_modal_img" alt="Poster preview" class="block w-full rounded-2xl preview-modal-img"/>
+    <img id="preview_modal_img" alt="Poster preview" data-i18n-alt="preview.poster_alt" class="block w-full rounded-2xl preview-modal-img"/>
   </sl-dialog>
 
-  <sl-dialog id="log_modal" label="Operation log" class="sl-theme-light" style="--width: min(92vw, 980px);">
+  <sl-dialog id="log_modal" label="Operation log" data-i18n-label="log.title" class="sl-theme-light" style="--width: min(92vw, 980px);">
     <div class="flex items-center justify-end">
-      <sl-button id="clear_log" size="small" variant="text">Clear</sl-button>
+      <sl-button id="clear_log" size="small" variant="text" data-i18n="log.clear">Clear</sl-button>
     </div>
     <pre id="log" class="mt-3 max-h-[60vh] overflow-auto whitespace-pre-wrap rounded-2xl border border-slate-200 bg-white/80 p-3 text-xs text-slate-700"></pre>
   </sl-dialog>
 
-  <sl-dialog id="session_modal" label="Session recovery required" class="sl-theme-light" style="--width: min(92vw, 520px);">
+  <sl-dialog id="session_modal" label="Session recovery required" data-i18n-label="session.dialog_label" class="sl-theme-light" style="--width: min(92vw, 520px);">
     <div class="space-y-2 text-sm text-slate-700">
-      <p id="session_message">The current page session is no longer valid.</p>
-      <p id="session_hint" class="text-xs text-slate-500">Reload the page to recover.</p>
+      <p id="session_message" data-i18n="session.message_default">The current page session is no longer valid.</p>
+      <p id="session_hint" class="text-xs text-slate-500" data-i18n="session.hint_default">Reload the page to recover.</p>
     </div>
     <div slot="footer" class="flex items-center justify-end gap-2">
-      <sl-button id="session_reload" variant="primary">Reload</sl-button>
+      <sl-button id="session_reload" variant="primary" data-i18n="session.reload">Reload</sl-button>
     </div>
   </sl-dialog>
 </body>

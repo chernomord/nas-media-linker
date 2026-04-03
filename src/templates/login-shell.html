@@ -7,26 +7,32 @@
   <link rel="stylesheet" href="/assets/app/app.css"/>
   <script type="module" src="/assets/app/app.js"></script>
 </head>
-<body class="login-page">
+<body class="login-page" data-page-title-key="page.login.title">
   <main class="login-shell">
-    <div class="login-meta">Synology linker</div>
-    <h1 class="login-title">Sign in to continue</h1>
+    <div class="login-shell__top">
+      <div class="login-meta" data-i18n="app.brand">Synology linker</div>
+      <div class="locale-switcher locale-switcher--light" data-locale-switcher data-i18n-aria-label="locale.switcher_aria">
+        <button type="button" class="locale-switcher__button" data-locale="en">EN</button>
+        <button type="button" class="locale-switcher__button" data-locale="ru">RU</button>
+      </div>
+    </div>
+    <h1 class="login-title" data-i18n="login.title">Sign in to continue</h1>
 
-    <section class="login-card" aria-label="Login form">
-      <p class="text-sm text-slate-600">This helper now uses an app-managed session instead of browser-native Basic Auth.</p>
+    <section class="login-card" aria-label="Login form" data-i18n-aria-label="login.form_aria">
+      <p class="text-sm text-slate-600" data-i18n="login.description">This helper now uses an app-managed session instead of browser-native Basic Auth.</p>
       <form id="login_form" class="login-form">
         <div>
-          <div class="login-label">Username</div>
+          <div class="login-label" data-i18n="login.username">Username</div>
           <input id="login_username" name="username" class="login-input" autocomplete="username" required/>
         </div>
         <div>
-          <div class="login-label">Password</div>
+          <div class="login-label" data-i18n="login.password">Password</div>
           <input id="login_password" name="password" type="password" class="login-input" autocomplete="current-password" required/>
         </div>
         <div id="login_error" class="login-error" role="alert"></div>
-        <button id="login_submit" class="login-button" type="submit">Sign in</button>
+        <button id="login_submit" class="login-button" type="submit" data-i18n="login.submit">Sign in</button>
       </form>
-      <p class="login-note">Session is stored only in helper memory and is lost on logout, timeout, or helper restart.</p>
+      <p class="login-note" data-i18n="login.note">Session is stored only in helper memory and is lost on logout, timeout, or helper restart.</p>
     </section>
   </main>
 </body>

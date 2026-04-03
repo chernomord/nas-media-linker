@@ -159,6 +159,59 @@ body.app-shell-page main > header .text-slate-500 {
   color: #cbd5f5;
 }
 
+.locale-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1875rem;
+  border: 1px solid rgba(226, 232, 240, 0.18);
+  border-radius: 999px;
+  background: rgba(248, 250, 252, 0.12);
+  backdrop-filter: blur(10px);
+}
+
+.locale-switcher--light {
+  border-color: rgba(148, 163, 184, 0.24);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.locale-switcher__button {
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #e2e8f0;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.35rem 0.6rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.locale-switcher__button:hover {
+  background: rgba(248, 250, 252, 0.12);
+}
+
+.locale-switcher__button.is-active {
+  background: rgba(248, 250, 252, 0.9);
+  color: #0f172a;
+}
+
+.locale-switcher--light .locale-switcher__button {
+  color: #475569;
+}
+
+.locale-switcher--light .locale-switcher__button:hover {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.locale-switcher--light .locale-switcher__button.is-active {
+  background: #0f172a;
+  color: #f8fafc;
+}
+
 sl-card {
   color: var(--sl-color-neutral-900);
 }
@@ -201,6 +254,13 @@ body.login-page {
   padding: 4rem 1.25rem;
 }
 
+.login-shell__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
 .login-card {
   border: 1px solid rgba(148, 163, 184, 0.35);
   border-radius: 24px;
@@ -216,6 +276,10 @@ body.login-page {
   text-transform: uppercase;
   font-size: 0.875rem;
   margin-bottom: 0.75rem;
+}
+
+.login-shell__top .login-meta {
+  margin-bottom: 0;
 }
 
 .login-title {

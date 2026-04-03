@@ -1,3 +1,5 @@
+import { t } from "./i18n/index.js";
+
 function onReady(callback) {
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", callback, { once: true });
@@ -315,9 +317,9 @@ function initAppShell() {
 
   function showSessionRecovery(info) {
     sessionFailureState = info;
-    $("session_message").textContent = info.message;
-    $("session_hint").textContent = info.hint;
-    log(`[session] ${info.kind}: ${info.message}`);
+    $("session_message").textContent = t(info.messageKey);
+    $("session_hint").textContent = t(info.hintKey);
+    log(`[session] ${info.kind}: ${t(info.messageKey)}`);
     $("session_modal").show();
   }
 
@@ -326,14 +328,14 @@ function initAppShell() {
     if (authMode === "session") {
       return {
         kind: "auth",
-        message: "Authentication was lost or expired.",
-        hint: "Reload the page and sign in again.",
+        messageKey: "session.auth_lost",
+        hintKey: "session.auth_hint",
       };
     }
     return {
       kind: "runtime",
-      message: "The helper session changed, likely after a restart.",
-      hint: "Reload the page to refresh the runtime token.",
+      messageKey: "session.runtime_changed",
+      hintKey: "session.runtime_hint",
     };
   }
 
@@ -350,11 +352,11 @@ function initAppShell() {
   }
 
   function setSearchStatus(id, kind, text) {
-    setStatus(id, kind, `Search: ${text}`);
+    setStatus(id, kind, t("status.search_prefix", { text }));
   }
 
   function setLinkStatus(id, kind, text) {
-    setStatus(id, kind, `Link: ${text}`);
+    setStatus(id, kind, t("status.link_prefix", { text }));
   }
 
   function toast(kind, title, message) {
@@ -384,11 +386,11 @@ function initAppShell() {
 
   function showCopied(tip) {
     if (!tip) return;
-    tip.content = "Скопировано!";
+    tip.content = t("browse.copied");
     tip.show();
     setTimeout(() => {
       tip.hide();
-      tip.content = "Copy path";
+      tip.content = t("browse.copy_path");
     }, 1500);
   }
 
@@ -575,7 +577,7 @@ function initAppShell() {
       }
       if (!result.ok) {
         console.error("Failed to bootstrap saved template", result);
-        savedItemsError = "Saved bootstrap failed";
+        savedItemsError = t("toast.saved_load_failed");
         break;
       }
     }
@@ -589,7 +591,7 @@ function initAppShell() {
       return;
     }
     if (!result.ok) {
-      toast("error", "Saved unavailable", savedItemsError || "Failed to load saved templates");
+      toast("error", t("toast.saved_unavailable"), savedItemsError || t("toast.saved_load_failed"));
       return;
     }
     await bootstrapSavedFromLocalStorageIfNeeded();
@@ -602,7 +604,7 @@ function initAppShell() {
     }
     if (!result.ok) {
       const message = result.data?.error || `HTTP ${result.status}`;
-      toast("error", "Save failed", message);
+      toast("error", t("toast.save_failed"), message);
       return false;
     }
     await loadSavedItems();
@@ -616,7 +618,7 @@ function initAppShell() {
     }
     if (!result.ok) {
       const message = result.data?.error || `HTTP ${result.status}`;
-      toast("error", "Delete failed", message);
+      toast("error", t("toast.delete_failed"), message);
       return false;
     }
     await loadSavedItems();
@@ -682,18 +684,18 @@ function initAppShell() {
   function validationMessage(kind) {
     const data = kind === "movie" ? movieFormData() : seasonFormData();
     if (kind === "movie") {
-      if (!data.src) return "Need source path";
-      if (!data.title) return "Need title";
-      if (!data.year) return "Need year";
-      if (!/^\d{4}$/.test(data.year)) return "Year must be YYYY";
+      if (!data.src) return t("validation.movie.need_source");
+      if (!data.title) return t("validation.need_title");
+      if (!data.year) return t("validation.need_year");
+      if (!/^\d{4}$/.test(data.year)) return t("validation.year_format");
       return "";
     }
-    if (!data.srcDir) return "Need source folder";
-    if (!data.title) return "Need title";
-    if (!data.season) return "Need season";
-    if (!/^\d+$/.test(data.season)) return "Season must be numeric";
-    if (!data.year) return "Need year";
-    if (!/^\d{4}$/.test(data.year)) return "Year must be YYYY";
+    if (!data.srcDir) return t("validation.season.need_source");
+    if (!data.title) return t("validation.need_title");
+    if (!data.season) return t("validation.need_season");
+    if (!/^\d+$/.test(data.season)) return t("validation.season_numeric");
+    if (!data.year) return t("validation.need_year");
+    if (!/^\d{4}$/.test(data.year)) return t("validation.year_format");
     return "";
   }
 
@@ -723,7 +725,7 @@ function initAppShell() {
       loading.variant = "neutral";
       loading.open = true;
       loading.className = "text-xs";
-      loading.textContent = "Loading saved items...";
+      loading.textContent = t("saved.loading");
       list.appendChild(loading);
       return;
     }
@@ -732,7 +734,7 @@ function initAppShell() {
       error.variant = "warning";
       error.open = true;
       error.className = "text-xs";
-      error.textContent = `Saved unavailable: ${savedItemsError}`;
+      error.textContent = t("saved.unavailable", { error: savedItemsError });
       list.appendChild(error);
       return;
     }
@@ -741,7 +743,7 @@ function initAppShell() {
       empty.variant = "neutral";
       empty.open = true;
       empty.className = "text-xs";
-      empty.textContent = "Нет сохраненных элементов";
+      empty.textContent = t("saved.empty");
       list.appendChild(empty);
       return;
     }
@@ -774,7 +776,7 @@ function initAppShell() {
       fillIcon.className = "text-blue-600";
       fillBtn.appendChild(fillIcon);
       const fillTip = document.createElement("sl-tooltip");
-      fillTip.content = "Fill form";
+      fillTip.content = t("saved.fill_form");
       fillTip.appendChild(fillBtn);
       fillBtn.onclick = () => {
         if (it.type === "movie") {
@@ -808,7 +810,7 @@ function initAppShell() {
       delIcon.className = "text-rose-600";
       delBtn.appendChild(delIcon);
       const delTip = document.createElement("sl-tooltip");
-      delTip.content = "Delete";
+      delTip.content = t("saved.delete");
       delTip.appendChild(delBtn);
       delBtn.onclick = () => {
         pendingDeleteId = it.id;
@@ -873,7 +875,7 @@ function initAppShell() {
       empty.variant = "neutral";
       empty.open = true;
       empty.className = "text-xs";
-      empty.textContent = "Ничего не найдено";
+      empty.textContent = t("preview.empty");
       list.appendChild(empty);
       showPreviewList(listId);
       return;
@@ -887,7 +889,7 @@ function initAppShell() {
       imgWrap.className = "h-24 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100";
       const img = document.createElement("img");
       img.className = "h-full w-full object-cover preview-cover";
-      img.alt = item.title || "Poster";
+      img.alt = item.title || t("preview.poster_fallback");
       img.referrerPolicy = "no-referrer";
       img.onerror = () => {
         img.remove();
@@ -911,7 +913,7 @@ function initAppShell() {
       const title = document.createElement("div");
       title.className = "text-sm font-semibold text-slate-900 truncate";
       const year = item.year ? ` (${item.year})` : "";
-      title.textContent = `${item.title || "Untitled"}${year}`;
+      title.textContent = `${item.title || t("preview.untitled")}${year}`;
       body.appendChild(title);
 
       if (item.summary) {
@@ -927,26 +929,26 @@ function initAppShell() {
       const badge = document.createElement("sl-tag");
       badge.setAttribute("size", "small");
       badge.setAttribute("variant", "neutral");
-      badge.textContent = "Plex match";
+      badge.textContent = t("preview.plex_match");
       metaRow.appendChild(badge);
 
       const useBtn = document.createElement("sl-button");
       useBtn.setAttribute("size", "small");
       useBtn.setAttribute("variant", "primary");
-      useBtn.textContent = "Use";
+      useBtn.textContent = t("preview.use");
       useBtn.onclick = () => {
         if (kind === "movie") {
           $("m_title").value = item.title || "";
           if (item.year) $("m_year").value = String(item.year);
           flashField("m_title");
           flashField("m_year");
-          setSearchStatus("m_status", "ok", "Selected");
+          setSearchStatus("m_status", "ok", t("status.selected"));
         } else {
           $("s_title").value = item.title || "";
           if (item.year) $("s_year").value = String(item.year);
           flashField("s_title");
           flashField("s_year");
-          setSearchStatus("s_status", "ok", "Selected");
+          setSearchStatus("s_status", "ok", t("status.selected"));
         }
         syncRunButtons();
       };
@@ -980,25 +982,25 @@ function initAppShell() {
     const year = yearEl?.value?.trim() || "";
 
     if (!title) {
-      setSearchStatus(statusId, "warn", "Need title");
+      setSearchStatus(statusId, "warn", t("status.need_title"));
       hideAutocomplete(acId);
       return;
     }
-    setSearchStatus(statusId, "info", "Searching...");
+    setSearchStatus(statusId, "info", t("status.searching"));
     const result = await fetchPreview(kind, title, year, 8);
     if (isSessionExpiredResult(result)) {
-      setSearchStatus(statusId, "warn", "Session expired");
+      setSearchStatus(statusId, "warn", t("status.session_expired"));
       hideAutocomplete(acId);
       return;
     }
     if (!result.ok) {
-      setSearchStatus(statusId, "error", `Error • HTTP ${result.status}`);
+      setSearchStatus(statusId, "error", t("status.error_http", { status: result.status }));
       hideAutocomplete(acId);
       return;
     }
     hideAutocomplete(acId);
     renderPreviewCards(listId, result.data?.items ?? [], kind);
-    setSearchStatus(statusId, "ok", "Ready");
+    setSearchStatus(statusId, "ok", t("status.ready"));
   }
 
   function renderAutocomplete(listId, items, kind) {
@@ -1018,7 +1020,7 @@ function initAppShell() {
       const title = document.createElement("div");
       title.className = "truncate flex-1 min-w-0";
       const year = item.year ? ` (${item.year})` : "";
-      title.textContent = `${item.title || "Untitled"}${year}`;
+      title.textContent = `${item.title || t("preview.untitled")}${year}`;
       row.appendChild(title);
 
       if (item.type) {
@@ -1035,7 +1037,7 @@ function initAppShell() {
           if (item.year) $("m_year").value = String(item.year);
           flashField("m_title");
           flashField("m_year");
-          setSearchStatus("m_status", "ok", "Selected");
+          setSearchStatus("m_status", "ok", t("status.selected"));
           hideAutocomplete("m_ac");
           renderPreviewCards("m_preview_list", [item], "movie");
         } else {
@@ -1043,7 +1045,7 @@ function initAppShell() {
           if (item.year) $("s_year").value = String(item.year);
           flashField("s_title");
           flashField("s_year");
-          setSearchStatus("s_status", "ok", "Selected");
+          setSearchStatus("s_status", "ok", t("status.selected"));
           hideAutocomplete("s_ac");
           renderPreviewCards("s_preview_list", [item], "show");
         }
@@ -1062,7 +1064,7 @@ function initAppShell() {
     }
     const shouldSave = isChecked("m_save");
     const entry = shouldSave ? movieEntryFromForm() : null;
-    setLinkStatus("m_status", "info", "Running...");
+    setLinkStatus("m_status", "info", t("status.running"));
     try {
       const result = await post("/api/link/movie", {
         src: $("m_src").value,
@@ -1070,22 +1072,24 @@ function initAppShell() {
         year: $("m_year").value,
       });
       if (isSessionExpiredResult(result)) {
-        setLinkStatus("m_status", "warn", "Session expired");
+        setLinkStatus("m_status", "warn", t("status.session_expired"));
         return;
       }
       log(result.text);
-      const codePart = result.data?.code != null ? ` • exit ${result.data.code}` : "";
+      const codePart = result.data?.code != null ? t("status.exit_code", { code: result.data.code }) : "";
       if (result.ok) {
-        setLinkStatus("m_status", "ok", `OK • HTTP ${result.status}${codePart}`);
-        toast("ok", "Movie linked", `HTTP ${result.status}${codePart}`);
+        const message = t("status.ok_http", { status: result.status, codePart });
+        setLinkStatus("m_status", "ok", message);
+        toast("ok", t("toast.movie_linked"), `HTTP ${result.status}${codePart}`);
       } else {
-        setLinkStatus("m_status", "error", `Error • HTTP ${result.status}${codePart}`);
-        toast("error", "Movie failed", `HTTP ${result.status}${codePart}`);
+        const message = t("status.error_http", { status: result.status }) + codePart;
+        setLinkStatus("m_status", "error", message);
+        toast("error", t("toast.movie_failed"), `HTTP ${result.status}${codePart}`);
       }
     } catch (error) {
       console.error("Movie link request failed", error);
-      setLinkStatus("m_status", "error", "Error • request failed");
-      toast("error", "Movie failed", "Request error");
+      setLinkStatus("m_status", "error", t("status.request_failed"));
+      toast("error", t("toast.movie_failed"), t("toast.request_error"));
     } finally {
       if (entry) {
         await saveItem(entry);
@@ -1101,7 +1105,7 @@ function initAppShell() {
     }
     const shouldSave = isChecked("s_save");
     const entry = shouldSave ? seasonEntryFromForm() : null;
-    setLinkStatus("s_status", "info", "Running...");
+    setLinkStatus("s_status", "info", t("status.running"));
     try {
       const result = await post("/api/link/season", {
         srcDir: $("s_src").value,
@@ -1110,22 +1114,24 @@ function initAppShell() {
         year: $("s_year").value,
       });
       if (isSessionExpiredResult(result)) {
-        setLinkStatus("s_status", "warn", "Session expired");
+        setLinkStatus("s_status", "warn", t("status.session_expired"));
         return;
       }
       log(result.text);
-      const codePart = result.data?.code != null ? ` • exit ${result.data.code}` : "";
+      const codePart = result.data?.code != null ? t("status.exit_code", { code: result.data.code }) : "";
       if (result.ok) {
-        setLinkStatus("s_status", "ok", `OK • HTTP ${result.status}${codePart}`);
-        toast("ok", "Season linked", `HTTP ${result.status}${codePart}`);
+        const message = t("status.ok_http", { status: result.status, codePart });
+        setLinkStatus("s_status", "ok", message);
+        toast("ok", t("toast.season_linked"), `HTTP ${result.status}${codePart}`);
       } else {
-        setLinkStatus("s_status", "error", `Error • HTTP ${result.status}${codePart}`);
-        toast("error", "Season failed", `HTTP ${result.status}${codePart}`);
+        const message = t("status.error_http", { status: result.status }) + codePart;
+        setLinkStatus("s_status", "error", message);
+        toast("error", t("toast.season_failed"), `HTTP ${result.status}${codePart}`);
       }
     } catch (error) {
       console.error("Season link request failed", error);
-      setLinkStatus("s_status", "error", "Error • request failed");
-      toast("error", "Season failed", "Request error");
+      setLinkStatus("s_status", "error", t("status.request_failed"));
+      toast("error", t("toast.season_failed"), t("toast.request_error"));
     } finally {
       if (entry) {
         await saveItem(entry);
@@ -1138,7 +1144,7 @@ function initAppShell() {
     const opt = sel?.selectedOptions?.[0];
     const root = opt?.dataset?.path || ROOT_PATHS[sel?.value] || "";
     if (!root) {
-      log("Browse root is not selected");
+      log(t("browse.root_not_selected"));
       return;
     }
     $("list").classList.add("hidden");
@@ -1147,7 +1153,7 @@ function initAppShell() {
     $("list_loading").classList.add("hidden");
     $("list").classList.remove("hidden");
     if (isSessionExpiredResult(result)) {
-      log("Session expired while listing folders");
+      log(t("browse.session_expired"));
       return;
     }
     const data = result.data || {};
@@ -1192,7 +1198,7 @@ function initAppShell() {
       copyIcon.className = "text-emerald-600";
       copyBtn.appendChild(copyIcon);
       const copyTip = document.createElement("sl-tooltip");
-      copyTip.content = "Copy path";
+      copyTip.content = t("browse.copy_path");
       copyTip.setAttribute("trigger", "manual");
       copyTip.hoist = true;
       copyTip.appendChild(copyBtn);
@@ -1206,7 +1212,7 @@ function initAppShell() {
           if (ok) {
             showCopied(copyTip);
           } else {
-            log("Clipboard error");
+            log(t("browse.clipboard_error"));
           }
         }
       };
@@ -1220,7 +1226,7 @@ function initAppShell() {
       listFillIcon.className = "text-blue-600";
       fillBtn.appendChild(listFillIcon);
       const fillTip = document.createElement("sl-tooltip");
-      fillTip.content = "Fill inputs";
+      fillTip.content = t("browse.fill_inputs");
       fillTip.appendChild(fillBtn);
       fillBtn.onclick = () => {
         if (it.type === "d") {
