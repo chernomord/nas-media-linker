@@ -7,7 +7,9 @@
     "start": "node --experimental-sqlite server.mjs",
     "start:local": "node --experimental-sqlite server.mjs",
     "build:ui": "vite build",
-    "test": "node --experimental-sqlite --test"
+    "test": "node --experimental-sqlite --test",
+    "test:ui": "npm run build:ui && PLAYWRIGHT_BROWSERS_PATH=/tmp/nas-linker-playwright-browsers playwright test",
+    "test:ui:install": "PLAYWRIGHT_BROWSERS_PATH=/tmp/nas-linker-playwright-browsers playwright install chromium"
   },
   "keywords": [
     "synology",
@@ -25,6 +27,7 @@
     "express": "^5.2.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "autoprefixer": "10.4.20",
     "postcss": "8.4.49",
     "tailwindcss": "3.4.17",

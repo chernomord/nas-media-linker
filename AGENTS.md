@@ -319,8 +319,9 @@ Historical migration details and retired runtime paths are preserved in [`docs/r
   - use layout assertions first; screenshot comparisons are secondary and should cover only a few high-value states
   - do not make Playwright the primary test harness for the whole project
 - Current status:
-  - browser-level visual regression tooling is deferred
-  - expected future role is a thin, optional guardrail layer for a few known-fragile UI cases
+  - `node:test` remains primary; Playwright is now a thin secondary layer via `npm run test:ui`
+  - current Playwright scope is intentionally narrow: browse-list truncation/overflow and live locale-switch behavior
+  - browser-level coverage should stay small unless repeated real regressions justify expansion
 
 ## Planning Docs
 - Active and historical roadmap material lives in [`docs/roadmap.md`](./docs/roadmap.md).
