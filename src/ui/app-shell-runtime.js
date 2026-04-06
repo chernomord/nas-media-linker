@@ -14,6 +14,14 @@ function isSafariBrowser() {
   return /Safari/i.test(userAgent) && /Apple/i.test(vendor) && !/CriOS|Chrome|Chromium|Edg|FxiOS/i.test(userAgent);
 }
 
+function cloneTemplate(id) {
+  const template = document.getElementById(id);
+  if (!(template instanceof HTMLTemplateElement)) {
+    throw new Error(`Missing template: ${id}`);
+  }
+  return template.content.firstElementChild.cloneNode(true);
+}
+
 function initBackgroundEffect() {
   if (!document.body?.classList.contains("app-shell-page")) {
     return;
@@ -301,6 +309,7 @@ function initAppShell() {
     tv: document.body.dataset.rootTv || "",
   };
   const USE_NATIVE_NAME_TOOLTIP = isSafariBrowser();
+  const BROWSE_ROW_TEMPLATE_ID = "browse-row-template";
 
   let pendingDeleteId = null;
   let savedItemsCache = [];
@@ -840,50 +849,36 @@ function initAppShell() {
     const ul = $("list");
     ul.innerHTML = "";
     for (const it of items) {
-      const li = document.createElement("li");
-      li.className = "border-b border-slate-100 last:border-b-0 py-1.5 text-slate-800 min-w-0 overflow-hidden";
+      const li = cloneTemplate(BROWSE_ROW_TEMPLATE_ID);
+      const icon = li.querySelector('[data-role="icon"]');
+      const nameHost = li.querySelector('[data-role="name-host"]');
+      const copyTip = li.querySelector('[data-role="copy-tip"]');
+      const copyBtn = li.querySelector('[data-role="copy-btn"]');
+      const fillTip = li.querySelector('[data-role="fill-tip"]');
+      const fillBtn = li.querySelector('[data-role="fill-btn"]');
+      const nameNode = document.createElement("span");
 
-      const row = document.createElement("div");
-      row.className = "flex w-full items-center gap-2 min-w-0 overflow-hidden";
-
-      const label = document.createElement("div");
-      label.className = "flex w-0 min-w-0 flex-1 items-center gap-2 overflow-hidden";
-      const icon = document.createElement("sl-icon");
       icon.setAttribute("name", it.type === "d" ? "folder" : "film");
       icon.className = `${it.type === "d" ? "text-amber-600" : "text-slate-500"} flex-shrink-0`;
-      label.appendChild(icon);
-      const nameTip = document.createElement("sl-tooltip");
-      const text = document.createElement("span");
-      text.className = "block min-w-0 truncate";
-      text.textContent = it.name;
+
+      nameNode.dataset.role = "name";
+      nameNode.className = "block min-w-0 flex-1 truncate";
+      nameNode.textContent = it.name;
       if (USE_NATIVE_NAME_TOOLTIP) {
-        text.title = it.name;
-        label.appendChild(text);
+        nameNode.title = it.name;
+        nameHost.appendChild(nameNode);
       } else {
-        nameTip.className = "list-name-tooltip";
+        const nameTip = document.createElement("sl-tooltip");
         nameTip.content = it.name;
         nameTip.setAttribute("placement", "top");
         nameTip.hoist = true;
-        nameTip.appendChild(text);
-        label.appendChild(nameTip);
+        nameTip.appendChild(nameNode);
+        nameHost.appendChild(nameTip);
       }
-      row.appendChild(label);
 
-      const actions = document.createElement("div");
-      actions.className = "ml-2 flex items-center gap-2 text-xs flex-shrink-0";
-
-      const copyBtn = document.createElement("sl-button");
-      copyBtn.setAttribute("size", "small");
-      copyBtn.setAttribute("variant", "text");
-      const copyIcon = document.createElement("sl-icon");
-      copyIcon.setAttribute("name", "clipboard");
-      copyIcon.className = "text-emerald-600";
-      copyBtn.appendChild(copyIcon);
-      const copyTip = document.createElement("sl-tooltip");
       copyTip.content = t("browse.copy_path");
       copyTip.setAttribute("trigger", "manual");
       copyTip.hoist = true;
-      copyTip.appendChild(copyBtn);
       copyBtn.onclick = async () => {
         const path = `${root}/${it.name}`;
         try {
@@ -898,18 +893,7 @@ function initAppShell() {
           }
         }
       };
-      actions.appendChild(copyTip);
-
-      const fillBtn = document.createElement("sl-button");
-      fillBtn.setAttribute("size", "small");
-      fillBtn.setAttribute("variant", "text");
-      const listFillIcon = document.createElement("sl-icon");
-      listFillIcon.setAttribute("name", "box-arrow-in-right");
-      listFillIcon.className = "text-blue-600";
-      fillBtn.appendChild(listFillIcon);
-      const fillTip = document.createElement("sl-tooltip");
       fillTip.content = t("browse.fill_inputs");
-      fillTip.appendChild(fillBtn);
       fillBtn.onclick = () => {
         if (it.type === "d") {
           $("m_src").value = `${root}/${it.name}`;
@@ -919,10 +903,11 @@ function initAppShell() {
           syncRunButtons();
         }
       };
-      actions.appendChild(fillTip);
+      if (it.type !== "d") {
+        fillBtn.disabled = true;
+        fillBtn.setAttribute("aria-disabled", "true");
+      }
 
-      row.appendChild(actions);
-      li.appendChild(row);
       ul.appendChild(li);
     }
   }

@@ -20,7 +20,7 @@ test("browse list keeps long names truncated inside the card", async ({ page }) 
   const row = page.locator("#list li").filter({ hasText: longName }).first();
   await expect(row).toBeVisible();
 
-  const label = row.locator("sl-tooltip.list-name-tooltip span").first();
+  const label = row.locator('[data-role="name"]').first();
   await expect(label).toBeVisible();
 
   const metrics = await label.evaluate((element) => {
