@@ -13,7 +13,7 @@ The tool serves a browser UI, validates paths on the server, and executes link o
 ## What It Does
 
 - Link a single movie folder into a normalized movie layout
-- Link a season folder into a normalized TV layout
+- Link a season folder into a normalized TV layout, skipping colliding basenames instead of overwriting existing season files
 - Browse a restricted subset of NAS folders from the UI
 - Save reusable templates for quick repeat linking
 - Optionally proxy metadata search through Plex Discover / OMDb without exposing tokens to the browser

@@ -43,6 +43,12 @@ function makeSavedTemplatesStore() {
 }
 
 const fixtureRoots = new Set([TORRENTS_ROOT, MOVIES_ROOT, TV_ROOT]);
+const fixtureSearchItems = Array.from({ length: 8 }, (_, index) => ({
+  title: `Kimetsu no Yaiba result ${index + 1} with a deliberately long title`,
+  year: 2024,
+  type: "show",
+  summary: `Fixture result ${index + 1}`,
+}));
 
 const executor = {
   async linkMovie() {
@@ -63,12 +69,25 @@ const executor = {
   },
 };
 
+const metadata = {
+  ok: true,
+  status: 200,
+  data: {
+    MediaContainer: {
+      Metadata: fixtureSearchItems,
+    },
+  },
+};
+
 const app = createApp({
   runToken: "ui-regression-token",
   executor,
   savedTemplatesStore: makeSavedTemplatesStore(),
   appAuthUser: null,
   appAuthPasswordHash: null,
+  hasPlexDiscoverConfigFn: () => true,
+  plexDiscoverContainerFn: async () => metadata,
+  enrichItemsWithOmdbPosterFn: async (items) => items,
 });
 
 const server = app.listen(port, host, () => {

@@ -218,6 +218,12 @@ sl-card {
 
 sl-card.glass-card::part(base) {
   backdrop-filter: blur(6px);
+  overflow: visible;
+}
+
+sl-dialog.sl-theme-light::part(title),
+sl-dialog.sl-theme-light::part(header) {
+  color: #0f172a;
 }
 
 sl-input.flash::part(base) {

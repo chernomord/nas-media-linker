@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import os from "node:os";
 import path from "node:path";
-import { mkdtemp, mkdir, rm, stat, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readdir, rm, stat, writeFile } from "node:fs/promises";
 
 import { createExecutor } from "../src/core/executor.mjs";
 
@@ -255,6 +255,104 @@ test("linkSeason allows printable Unicode source paths", async () => {
     assert.match(result.stdout, /Сериал \(2025\)/);
     assert.equal(ep1Stat.ino, ep1DstStat.ino);
     assert.equal(ep2Stat.ino, ep2DstStat.ino);
+  } finally {
+    await rm(fixture.base, { recursive: true, force: true });
+  }
+});
+
+test("linkSeason appends new episodes and skips colliding basenames", async () => {
+  const fixture = await makeFixture();
+  try {
+    const firstSrcDir = path.join(fixture.roots.torrents, "Release One");
+    const secondSrcDir = path.join(fixture.roots.torrents, "Release Two");
+    await mkdir(firstSrcDir);
+    await mkdir(secondSrcDir);
+
+    const firstSrc1 = path.join(firstSrcDir, "S02E01.mkv");
+    const firstSrc2 = path.join(firstSrcDir, "S02E02.mkv");
+    const secondSrc2 = path.join(secondSrcDir, "S02E02.mkv");
+    const secondSrc3 = path.join(secondSrcDir, "S02E03.mp4");
+    await writeFile(firstSrc1, "one");
+    await writeFile(firstSrc2, "two");
+    await writeFile(secondSrc2, "two-again");
+    await writeFile(secondSrc3, "three");
+
+    const firstResult = await fixture.executor.linkSeason({
+      srcDir: firstSrcDir,
+      title: "Show",
+      season: "2",
+      year: "2025",
+    });
+    const secondResult = await fixture.executor.linkSeason({
+      srcDir: secondSrcDir,
+      title: "Show",
+      season: "2",
+      year: "2025",
+    });
+
+    const dstDir = path.join(fixture.roots.tv, "Show (2025)", "Season 02");
+    const names = (await readdir(dstDir)).sort();
+    const ep1Dst = path.join(dstDir, "S02E01.mkv");
+    const ep2Dst = path.join(dstDir, "S02E02.mkv");
+    const ep3Dst = path.join(dstDir, "S02E03.mp4");
+    const firstSrc1Stat = await stat(firstSrc1);
+    const firstSrc2Stat = await stat(firstSrc2);
+    const secondSrc3Stat = await stat(secondSrc3);
+    const ep1DstStat = await stat(ep1Dst);
+    const ep2DstStat = await stat(ep2Dst);
+    const ep3DstStat = await stat(ep3Dst);
+
+    assert.equal(firstResult.code, 0);
+    assert.equal(secondResult.code, 0);
+    assert.equal(names.length, 3);
+    assert.deepEqual(names, ["S02E01.mkv", "S02E02.mkv", "S02E03.mp4"]);
+    assert.equal(firstSrc1Stat.ino, ep1DstStat.ino);
+    assert.equal(firstSrc2Stat.ino, ep2DstStat.ino);
+    assert.equal(secondSrc3Stat.ino, ep3DstStat.ino);
+    assert.match(secondResult.stdout, /existing file kept/);
+    assert.match(secondResult.stdout, /Linked season:/);
+    assert.match(secondResult.stdout, /linked: 1/);
+    assert.match(secondResult.stdout, /skipped: 1/);
+  } finally {
+    await rm(fixture.base, { recursive: true, force: true });
+  }
+});
+
+test("linkSeason is idempotent when relinking the same season source", async () => {
+  const fixture = await makeFixture();
+  try {
+    const srcDir = path.join(fixture.roots.torrents, "Release");
+    await mkdir(srcDir);
+
+    const src = path.join(srcDir, "S01E01.mkv");
+    await writeFile(src, "one");
+
+    const firstResult = await fixture.executor.linkSeason({
+      srcDir,
+      title: "Show",
+      season: "1",
+      year: "2025",
+    });
+    const secondResult = await fixture.executor.linkSeason({
+      srcDir,
+      title: "Show",
+      season: "1",
+      year: "2025",
+    });
+
+    const dstDir = path.join(fixture.roots.tv, "Show (2025)", "Season 01");
+    const names = (await readdir(dstDir)).sort();
+    const dst = path.join(dstDir, "S01E01.mkv");
+    const srcStat = await stat(src);
+    const dstStat = await stat(dst);
+
+    assert.equal(firstResult.code, 0);
+    assert.equal(secondResult.code, 0);
+    assert.deepEqual(names, ["S01E01.mkv"]);
+    assert.equal(srcStat.ino, dstStat.ino);
+    assert.match(secondResult.stdout, /already linked/);
+    assert.match(secondResult.stdout, /linked: 0/);
+    assert.match(secondResult.stdout, /skipped: 1/);
   } finally {
     await rm(fixture.base, { recursive: true, force: true });
   }

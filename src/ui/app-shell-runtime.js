@@ -1,4 +1,5 @@
 import { onLocaleChange, t } from "./i18n/index.js";
+import { parseSeasonLinkSummary } from "./season-link-summary.mjs";
 
 function onReady(callback) {
   if (document.readyState === "loading") {
@@ -381,7 +382,11 @@ function initAppShell() {
   function toast(kind, title, message) {
     try {
       const alert = document.createElement("sl-alert");
-      alert.variant = kind === "ok" ? "success" : kind === "error" ? "danger" : "primary";
+      alert.variant =
+        kind === "ok" ? "success" :
+        kind === "error" ? "danger" :
+        kind === "warn" ? "warning" :
+        "primary";
       alert.closable = true;
       alert.duration = 3000;
       alert.innerHTML = `<strong>${title}</strong><br/>${message}`;
@@ -733,6 +738,25 @@ function initAppShell() {
     const message = validationMessage(kind);
     if (fieldId) flashField(fieldId);
     if (message) setLinkStatus(statusId, "warn", message);
+  }
+
+  function seasonLinkMessage(result) {
+    const codePart = result.data?.code != null ? t("status.exit_code", { code: result.data.code }) : "";
+    const summary = parseSeasonLinkSummary(result.data?.stdout);
+    if (summary.skipped > 0) {
+      return {
+        kind: "warn",
+        message: t("status.ok_http_partial", {
+          status: result.status,
+          codePart,
+          skipped: summary.skipped,
+        }),
+      };
+    }
+    return {
+      kind: "ok",
+      message: t("status.ok_http", { status: result.status, codePart }),
+    };
   }
 
   function renderSaved() {
@@ -1206,9 +1230,13 @@ function initAppShell() {
       log(result.text);
       const codePart = result.data?.code != null ? t("status.exit_code", { code: result.data.code }) : "";
       if (result.ok) {
-        const message = t("status.ok_http", { status: result.status, codePart });
-        setLinkStatus("s_status", "ok", message);
-        toast("ok", t("toast.season_linked"), `HTTP ${result.status}${codePart}`);
+        const summary = seasonLinkMessage(result);
+        setLinkStatus("s_status", summary.kind, summary.message);
+        if (summary.kind === "warn") {
+          toast("warn", t("toast.season_partial"), summary.message);
+        } else {
+          toast("ok", t("toast.season_linked"), `HTTP ${result.status}${codePart}`);
+        }
       } else {
         const message = t("status.error_http", { status: result.status }) + codePart;
         setLinkStatus("s_status", "error", message);

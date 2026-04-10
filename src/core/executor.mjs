@@ -215,9 +215,30 @@ export function createExecutor({ roots: rootOverrides = {} } = {}) {
         await fsp.mkdir(dstDir, { recursive: true });
 
         const lines = [];
+        let linkedCount = 0;
+        let skippedCount = 0;
         for (const src of files) {
-          const dst = path.posix.join(dstDir, path.posix.basename(src));
+          const baseName = path.posix.basename(src);
+          const dst = path.posix.join(dstDir, baseName);
+          try {
+            const existing = await fsp.stat(dst);
+            if (!existing.isFile()) {
+              throw new ExecutorInputError(`Destination exists and is not a file: ${dst}`);
+            }
+            const srcStat = await fsp.stat(src);
+            if (existing.dev === srcStat.dev && existing.ino === srcStat.ino) {
+              skippedCount += 1;
+              lines.push(`  = ${dst} (already linked)`);
+              continue;
+            }
+            skippedCount += 1;
+            lines.push(`  ! ${dst} (existing file kept)`);
+            continue;
+          } catch (error) {
+            if (error?.code !== "ENOENT") throw error;
+          }
           await replaceHardlink(src, dst);
+          linkedCount += 1;
           lines.push(`  ${src}`);
           lines.push(`  -> ${dst}`);
         }
@@ -225,6 +246,8 @@ export function createExecutor({ roots: rootOverrides = {} } = {}) {
         lines.push("Linked season:");
         lines.push(`  show: ${safeTitle} (${year})`);
         lines.push(`  season: ${paddedSeason}`);
+        lines.push(`  linked: ${linkedCount}`);
+        lines.push(`  skipped: ${skippedCount}`);
         lines.push(`  from: ${srcDir}`);
         lines.push(`  to: ${dstDir}`);
 
