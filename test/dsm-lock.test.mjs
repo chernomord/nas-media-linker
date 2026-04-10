@@ -94,6 +94,52 @@ test("nested lock reuse keeps the parent deploy lock until the top-level owner e
   }
 });
 
+test("helper-common prepends resolved node directory to PATH for npm shebangs", async () => {
+  const fixture = await makeHelperCommonFixture();
+  const helperCommonArg = JSON.stringify(fixture.helperCommonPath);
+  const binDir = path.join(fixture.base, "bin");
+
+  try {
+    await mkdir(binDir, { recursive: true });
+
+    await writeExecutable(
+      path.join(binDir, "node"),
+      `#!/bin/sh
+exit 0
+`,
+    );
+
+    await writeExecutable(
+      path.join(binDir, "npm"),
+      `#!/bin/sh
+exit 0
+`,
+    );
+
+    const result = runSh(`
+      set -eu
+      . ${helperCommonArg}
+      printf '%s\n' "$PATH"
+      printf '%s\n' "$NODE_BIN"
+      printf '%s\n' "$NPM_BIN"
+    `, {
+      env: {
+        ...fixture.env,
+        PATH: `${binDir}:${process.env.PATH ?? ""}`,
+      },
+    });
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+
+    const [pathLine, nodeBinLine, npmBinLine] = result.stdout.trim().split("\n");
+    assert.equal(pathLine.split(":")[0], binDir);
+    assert.equal(nodeBinLine, path.join(binDir, "node"));
+    assert.equal(npmBinLine, path.join(binDir, "npm"));
+  } finally {
+    await rm(fixture.base, { recursive: true, force: true });
+  }
+});
+
 test("manual concurrent operation still fails while another top-level op holds the lock", async () => {
   const fixture = await makeHelperCommonFixture();
   const helperCommonArg = JSON.stringify(fixture.helperCommonPath);

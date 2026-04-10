@@ -124,6 +124,14 @@ High-level flow:
 4. Опубликуй helper через DSM reverse proxy.
 5. Используй boot task для `start-helper.sh` и manual task для `restart-helper.sh`.
 
+Опциональный локальный wrapper для deploy:
+
+```sh
+./ops/remote/deploy-helper.sh
+```
+
+Он синхронизирует checkout на `movies_linker@synology.local` по SSH и затем запускает существующий DSM deploy-script на месте от того же runtime user.
+
 ## Minimal Env Surface
 
 Основные env:

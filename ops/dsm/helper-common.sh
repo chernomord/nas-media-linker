@@ -40,6 +40,23 @@ NODE_BIN=$(resolve_node) || {
   exit 1
 }
 
+prepend_path_entry() {
+  case ":${PATH:-}:" in
+    *":$1:"*)
+      return 0
+      ;;
+  esac
+
+  if [ -n "${PATH:-}" ]; then
+    PATH="$1:$PATH"
+  else
+    PATH="$1"
+  fi
+  export PATH
+}
+
+prepend_path_entry "$(CDPATH= cd -- "$(dirname -- "$NODE_BIN")" && pwd)"
+
 resolve_npm() {
   if command -v npm >/dev/null 2>&1; then
     command -v npm

@@ -28,6 +28,10 @@ This folder is the operational source of truth for DSM-hosted mode.
 - `deploy-helper.sh` - `npm ci` + `npm run build:ui` + restart
 - `status-helper.sh` - running/not-running probe
 
+Local convenience wrapper:
+
+- `ops/remote/deploy-helper.sh` - sync checkout over SSH to `movies_linker@synology.local` and then run `deploy-helper.sh` on the NAS
+
 ## Expected DSM tasks
 
 Boot task:
