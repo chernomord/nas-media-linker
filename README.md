@@ -132,6 +132,8 @@ Optional local deploy wrapper:
 
 This syncs the checkout to `movies_linker@synology.local` over SSH and then runs the existing DSM deploy script on-box as the same runtime user. If you want the explicit helper path, `./ops/remote/deploy-helper.sh` does the same thing.
 
+`./deploy-local.sh` is the preferred local entrypoint for manual updates during development.
+
 ## Minimal Env Surface
 
 Primary env:

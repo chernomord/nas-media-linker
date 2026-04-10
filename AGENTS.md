@@ -305,6 +305,14 @@ Historical migration details and retired runtime paths are preserved in [`docs/r
   rationale:
     why_this_decision: tool has intentional cinematic visual direction
     tradeoff: extra rendering cost
+
+- name: Prefer standard Shoelace dialog header-actions for dialog chrome
+  category: design_decision
+  scope: UI
+  status: active
+  rationale:
+    why_this_decision: keeps dialog title and actions aligned with the component's built-in layout
+    tradeoff: custom dialog chrome should be reserved for rare cases with a clear alignment need
 ```
 
 ## Testing Boundaries

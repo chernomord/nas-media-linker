@@ -132,6 +132,8 @@ High-level flow:
 
 Он синхронизирует checkout на `movies_linker@synology.local` по SSH и затем запускает существующий DSM deploy-script на месте от того же runtime user. Если нужен явный путь к helper-скрипту, `./ops/remote/deploy-helper.sh` делает то же самое.
 
+`./deploy-local.sh` - предпочтительный локальный entrypoint для ручных обновлений в процессе разработки.
+
 ## Minimal Env Surface
 
 Основные env:
