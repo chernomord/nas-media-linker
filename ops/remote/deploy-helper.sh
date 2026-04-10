@@ -44,7 +44,7 @@ cleanup() {
 
 trap cleanup EXIT INT TERM
 
-echo "nas-linker remote deploy: target=$SSH_TARGET"
+echo "nas-linker remote deploy: target=$SSH_TARGET local=$LOCAL_APP_DIR remote=$REMOTE_APP_DIR"
 echo "nas-linker remote deploy: ensure remote app dir"
 ssh $SSH_BASE_OPTS "$SSH_TARGET" "$REMOTE_MKDIR_CMD"
 

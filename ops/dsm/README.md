@@ -30,6 +30,7 @@ This folder is the operational source of truth for DSM-hosted mode.
 
 Local convenience wrapper:
 
+- `deploy-local.sh` - short root-level wrapper for the SSH deploy flow
 - `ops/remote/deploy-helper.sh` - sync checkout over SSH to `movies_linker@synology.local` and then run `deploy-helper.sh` on the NAS
 
 ## Expected DSM tasks

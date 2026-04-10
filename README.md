@@ -127,10 +127,10 @@ High-level flow:
 Optional local deploy wrapper:
 
 ```sh
-./ops/remote/deploy-helper.sh
+./deploy-local.sh
 ```
 
-This syncs the checkout to `movies_linker@synology.local` over SSH and then runs the existing DSM deploy script on-box as the same runtime user.
+This syncs the checkout to `movies_linker@synology.local` over SSH and then runs the existing DSM deploy script on-box as the same runtime user. If you want the explicit helper path, `./ops/remote/deploy-helper.sh` does the same thing.
 
 ## Minimal Env Surface
 
