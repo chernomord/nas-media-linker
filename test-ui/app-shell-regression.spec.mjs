@@ -108,15 +108,32 @@ test("season autocomplete renders in a portal with clean hover styling", async (
   await expect(page.locator("#s_ac")).toContainText("Kimetsu no Yaiba result 1");
 });
 
-test("log dialog title stays readable on the light panel", async ({ page }) => {
+test("log dialog header-actions align with the standard dialog header", async ({ page }) => {
   await page.goto("/");
 
   await page.locator("#open_log").click();
 
-  const color = await page.locator("#log_modal").evaluate((dialog) => {
+  const dialogState = await page.locator("#log_modal").evaluate((dialog) => {
     const title = dialog.shadowRoot?.querySelector('[part="title"]');
-    return title ? getComputedStyle(title).color : "";
+    const clear = dialog.querySelector("#clear_log");
+    const actions = dialog.shadowRoot?.querySelector('[part="header-actions"]');
+    const close = dialog.shadowRoot?.querySelector('[part="close-button"]');
+    const titleRect = title?.getBoundingClientRect();
+    const actionsRect = actions?.getBoundingClientRect();
+    const clearRect = clear?.getBoundingClientRect();
+    const closeRect = close?.getBoundingClientRect();
+    return {
+      titleColor: title ? getComputedStyle(title).color : "",
+      titleCenterY: titleRect ? titleRect.top + titleRect.height / 2 : 0,
+      actionsCenterY: actionsRect ? actionsRect.top + actionsRect.height / 2 : 0,
+      clearCenterY: clearRect ? clearRect.top + clearRect.height / 2 : 0,
+      closeCenterY: closeRect ? closeRect.top + closeRect.height / 2 : 0,
+      titleTop: titleRect?.top ?? 0,
+      actionsTop: actionsRect?.top ?? 0,
+    };
   });
 
-  expect(color).toBe("rgb(15, 23, 42)");
+  expect(dialogState.titleColor).toBe("rgb(15, 23, 42)");
+  expect(Math.abs(dialogState.titleTop - dialogState.actionsTop)).toBeLessThan(3);
+  expect(Math.abs(dialogState.clearCenterY - dialogState.closeCenterY)).toBeLessThan(3);
 });

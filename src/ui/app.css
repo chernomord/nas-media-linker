@@ -244,6 +244,21 @@ sl-dialog.sl-theme-light::part(header) {
   color: #0f172a;
 }
 
+sl-dialog.log-dialog::part(header-actions) {
+  align-items: center;
+  gap: 0.25rem;
+}
+
+sl-dialog.log-dialog::part(title) {
+  font-size: 1.375rem;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+sl-dialog.log-dialog sl-icon-button#clear_log::part(base) {
+  color: #2563eb;
+}
+
 sl-tab-panel::part(base) {
   overflow: visible;
 }
