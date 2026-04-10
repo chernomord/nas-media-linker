@@ -45,9 +45,9 @@
                 <div class="text-xs uppercase tracking-[0.2em] text-slate-500" data-i18n="season.source_label">Source folder</div>
                 <sl-input id="s_src" class="w-full" size="small" placeholder="__TORRENTS_ROOT__/Show Folder" data-i18n-placeholder="season.source_placeholder"></sl-input>
                 <div class="grid gap-3 md:grid-cols-[1fr_100px_120px]">
-                  <div class="relative">
+                  <div class="relative" data-autocomplete-anchor="s_ac">
                     <sl-input id="s_title" size="small" placeholder="Show title" data-i18n-placeholder="season.title_placeholder"></sl-input>
-                    <div id="s_ac" class="absolute left-0 right-0 top-full z-10 mt-1 hidden max-h-64 overflow-auto rounded-xl border border-slate-200 bg-white/95 shadow"></div>
+                    <div id="s_ac" class="autocomplete-panel hidden"></div>
                   </div>
                   <sl-input id="s_season" size="small" placeholder="2"></sl-input>
                   <sl-input id="s_year" size="small" placeholder="2023"></sl-input>
@@ -68,9 +68,9 @@
                 <div class="text-xs uppercase tracking-[0.2em] text-slate-500" data-i18n="movie.source_label">Source path</div>
                 <sl-input id="m_src" class="w-full" size="small" placeholder="__TORRENTS_ROOT__/Movies/...file.mkv" data-i18n-placeholder="movie.source_placeholder"></sl-input>
                 <div class="grid gap-3 md:grid-cols-[1fr_120px]">
-                  <div class="relative">
+                  <div class="relative" data-autocomplete-anchor="m_ac">
                     <sl-input id="m_title" size="small" placeholder="Title" data-i18n-placeholder="movie.title_placeholder"></sl-input>
-                    <div id="m_ac" class="absolute left-0 right-0 top-full z-10 mt-1 hidden max-h-64 overflow-auto rounded-xl border border-slate-200 bg-white/95 shadow"></div>
+                    <div id="m_ac" class="autocomplete-panel hidden"></div>
                   </div>
                   <sl-input id="m_year" size="small" placeholder="2025"></sl-input>
                 </div>

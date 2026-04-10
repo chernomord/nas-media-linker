@@ -68,7 +68,7 @@ test("locale switch updates copy without a page reload", async ({ page }) => {
   expect(marker).toBe("preserved");
 });
 
-test("season autocomplete can overflow the card without being clipped", async ({ page }) => {
+test("season autocomplete renders in a portal with clean hover styling", async ({ page }) => {
   await page.goto("/");
 
   await setShoelaceValue(page, "#s_title", "Kimetsu");
@@ -77,12 +77,34 @@ test("season autocomplete can overflow the card without being clipped", async ({
     return ac && !ac.classList.contains("hidden") && ac.children.length > 0;
   });
 
-  const overflow = await page.locator("sl-card.glass-card").evaluate((card) => {
-    const base = card.shadowRoot?.querySelector('[part="base"]');
-    return base ? getComputedStyle(base).overflow : "";
+  const acState = await page.locator("#s_ac").evaluate((ac) => {
+    const style = getComputedStyle(ac);
+    return {
+      position: style.position,
+      parentId: ac.parentElement?.id ?? "",
+      maxHeight: style.maxHeight,
+    };
   });
 
-  expect(overflow).toBe("visible");
+  expect(acState.position).toBe("fixed");
+  expect(acState.parentId).toBe("autocomplete_portal");
+  expect(acState.maxHeight).not.toBe("none");
+
+  const firstOption = page.locator("#s_ac button").first();
+  await firstOption.hover();
+
+  const optionStyles = await firstOption.evaluate((option) => {
+    const style = getComputedStyle(option);
+    return {
+      appearance: style.appearance,
+      borderTopStyle: style.borderTopStyle,
+      backgroundColor: style.backgroundColor,
+    };
+  });
+
+  expect(optionStyles.appearance).toBe("none");
+  expect(optionStyles.borderTopStyle).toBe("none");
+  expect(optionStyles.backgroundColor).toMatch(/241, 245, 249/);
   await expect(page.locator("#s_ac")).toContainText("Kimetsu no Yaiba result 1");
 });
 

@@ -964,11 +964,74 @@ function initAppShell() {
     });
   }
 
+  const AUTOCOMPLETE_PORTAL_ID = "autocomplete_portal";
+
+  function ensureAutocompletePortal() {
+    let portal = document.getElementById(AUTOCOMPLETE_PORTAL_ID);
+    if (portal) return portal;
+    portal = document.createElement("div");
+    portal.id = AUTOCOMPLETE_PORTAL_ID;
+    portal.className = "autocomplete-portal";
+    portal.style.position = "fixed";
+    portal.style.inset = "0";
+    portal.style.zIndex = "60";
+    portal.style.pointerEvents = "none";
+    document.body.appendChild(portal);
+    return portal;
+  }
+
+  function autocompleteAnchor(listId) {
+    return document.querySelector(`[data-autocomplete-anchor="${listId}"]`);
+  }
+
+  function repositionAutocomplete(listId) {
+    const list = $(listId);
+    const anchor = autocompleteAnchor(listId);
+    if (!list || !anchor || list.classList.contains("hidden")) return;
+
+    const portal = ensureAutocompletePortal();
+    if (list.parentElement !== portal) {
+      portal.appendChild(list);
+    }
+
+    const rect = anchor.getBoundingClientRect();
+    const gap = 8;
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+    const maxWidth = Math.max(0, viewportWidth - gap * 2);
+    const width = maxWidth === 0 ? rect.width : Math.min(Math.max(rect.width, 240), maxWidth);
+    const left = Math.max(gap, Math.min(rect.left, Math.max(gap, viewportWidth - width - gap)));
+    const spaceBelow = viewportHeight - rect.bottom - gap;
+    const spaceAbove = rect.top - gap;
+    const openUp = spaceBelow < 180 && spaceAbove > spaceBelow;
+    const availableHeight = Math.max(0, openUp ? spaceAbove : spaceBelow);
+    const maxHeight = Math.min(256, Math.max(80, availableHeight));
+    const top = openUp
+      ? Math.max(gap, rect.top - gap - Math.min(maxHeight, availableHeight))
+      : Math.min(rect.bottom + gap, Math.max(gap, viewportHeight - gap - Math.min(maxHeight, availableHeight)));
+
+    list.style.left = `${left}px`;
+    list.style.top = `${top}px`;
+    list.style.width = `${width}px`;
+    list.style.maxHeight = `${maxHeight}px`;
+  }
+
+  function showAutocomplete(listId) {
+    const list = $(listId);
+    if (!list) return;
+    list.classList.remove("hidden");
+    repositionAutocomplete(listId);
+  }
+
   function hideAutocomplete(listId) {
     const list = $(listId);
     if (!list) return;
     list.classList.add("hidden");
     list.innerHTML = "";
+    list.style.left = "";
+    list.style.top = "";
+    list.style.width = "";
+    list.style.maxHeight = "";
   }
 
   function showPreviewList(listId) {
@@ -1120,15 +1183,15 @@ function initAppShell() {
       hideAutocomplete(listId);
       return;
     }
-    list.classList.remove("hidden");
+    showAutocomplete(listId);
 
     for (const item of items) {
       const row = document.createElement("button");
       row.type = "button";
-      row.className = "flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-slate-800 hover:bg-slate-100";
+      row.className = "autocomplete-option";
 
       const title = document.createElement("div");
-      title.className = "truncate flex-1 min-w-0";
+      title.className = "autocomplete-option__title";
       const year = item.year ? ` (${item.year})` : "";
       title.textContent = `${item.title || t("preview.untitled")}${year}`;
       row.appendChild(title);
@@ -1309,15 +1372,29 @@ function initAppShell() {
   }
 
   document.addEventListener("click", (event) => {
-    const mWrap = $("m_ac")?.parentElement;
-    const sWrap = $("s_ac")?.parentElement;
-    if (mWrap && !mWrap.contains(event.target)) {
+    const mWrap = autocompleteAnchor("m_ac");
+    const sWrap = autocompleteAnchor("s_ac");
+    const mList = $("m_ac");
+    const sList = $("s_ac");
+    const mTargetInside = (mWrap && mWrap.contains(event.target)) || (mList && mList.contains(event.target));
+    const sTargetInside = (sWrap && sWrap.contains(event.target)) || (sList && sList.contains(event.target));
+    if (mWrap && !mTargetInside) {
       hideAutocomplete("m_ac");
     }
-    if (sWrap && !sWrap.contains(event.target)) {
+    if (sWrap && !sTargetInside) {
       hideAutocomplete("s_ac");
     }
   });
+
+  window.addEventListener("resize", () => {
+    repositionAutocomplete("m_ac");
+    repositionAutocomplete("s_ac");
+  });
+
+  window.addEventListener("scroll", () => {
+    repositionAutocomplete("m_ac");
+    repositionAutocomplete("s_ac");
+  }, true);
 
   onLocaleChange(() => {
     renderSaved();
