@@ -117,6 +117,7 @@ Current `v1.5` deploy note:
   - `deploy-helper.sh`
 - canonical local developer entrypoint is:
   - `deploy-local.sh`
+- season linking writes continuous `SxxEyy` episode filenames so multiple release blocks can coexist in one season without filename collisions
 - do not embed `npm ci` or `npm run build:ui` into boot/start scripts
 - NAS checkout must include full Node toolchain and devDependencies because `deploy-helper.sh` performs the UI build locally on NAS
 - lifecycle scripts are serialized via an ops lock under `.run/`; concurrent `deploy/start/stop/restart` attempts fail fast instead of racing each other

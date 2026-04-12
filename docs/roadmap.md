@@ -2,6 +2,9 @@
 
 Planning notes, release steps, and historical roadmap snapshots moved out of AGENTS.md so AGENTS can stay focused on the current model, invariants, and guardrails.
 
+## Project status
+The original user-facing functional scope for NAS media-linking is now effectively closed in the current baseline: browsing, matching, linking, saved templates, auth/session flow, and the DSM-hosted deployment path are all present. The remaining roadmap items are refinement, bilingual publication, and hardening rather than core capability delivery.
+
 ## Roadmap (v1.1)
 ### Step: NAS-hosted always-on mode (no custom containers)
 Этот step фиксирует целевую эксплуатацию без ручного локального старта: helper работает на NAS как внутренний сервис для устройств в домашней сети и через WireGuard. Шаг не меняет non-goals (публичный доступ не допускается), а добавляет/уточняет guardrails для безопасного self-hosted режима с минимальной инфраструктурой DSM.
@@ -803,12 +806,12 @@ Current implementation checkpoint:
 ### Step: Bilingual publication and lightweight UI i18n
 Цель шага: сделать проект publishable на английском и русском без тяжёлого i18n framework и без смешения языков в одном и том же слое. Репозиторий и public docs должны стать предсказуемыми для внешнего читателя, а UI должен получить минимальный, но явный locale layer для user-facing текста.
 
-Current planning checkpoint:
+Delivery checkpoint:
 
 ```yaml
 - phase: v1.6-phase-1
   name: Language policy and scope freeze
-  status: planned
+  status: done
   objective:
     - define a stable bilingual publication model before code extraction starts
     - prevent ad-hoc mixing of Russian and English across UI, docs, and internal artifacts
@@ -830,7 +833,7 @@ Current planning checkpoint:
 
 - phase: v1.6-phase-2
   name: Lightweight UI i18n layer
-  status: planned
+  status: done
   objective:
     - add minimal locale infrastructure in `src/ui` without introducing a heavy dependency
   target_model:
@@ -855,7 +858,7 @@ Current planning checkpoint:
 
 - phase: v1.6-phase-3
   name: Public docs bilingualization
-  status: planned
+  status: done
   objective:
     - make repository entry docs presentable to English-speaking and Russian-speaking readers
   delivered_when_done:
@@ -868,7 +871,7 @@ Current planning checkpoint:
 
 - phase: v1.6-phase-4
   name: Incremental extraction and validation
-  status: planned
+  status: done
   objective:
     - migrate existing UI strings into translation keys with minimal behavior drift
   validation_strategy:
@@ -882,6 +885,8 @@ Current planning checkpoint:
     - README pair exists and is cross-linked
     - no heavy external i18n framework was needed for the initial bilingual release
 ```
+
+This checkpoint is now closed for the current baseline: bilingual docs, locale switching, translation hooks, and regression coverage are in place. Any remaining work in this area should be treated as incremental polish or future expansion, not core v1.6 delivery.
 
 ```yaml
 - action: add

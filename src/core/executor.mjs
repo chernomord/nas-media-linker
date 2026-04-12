@@ -86,6 +86,25 @@ function isVideoFilename(name) {
   return [".mkv", ".mp4", ".avi", ".m4v"].some((ext) => name.endsWith(ext));
 }
 
+function extractEpisodeNumber(name) {
+  const stem = path.posix.basename(name, path.posix.extname(name));
+  const canonicalMatch = stem.match(/(?:^|[^A-Z0-9])S\d{1,2}E(\d{1,3})(?:[^0-9]|$)/i);
+  if (canonicalMatch) {
+    return Number(canonicalMatch[1]);
+  }
+
+  const trailingMatch = stem.match(/(?:^|[^\d])(\d{1,3})(?=(?:\s*\[[^\]]*\])?$)/);
+  if (trailingMatch) {
+    return Number(trailingMatch[1]);
+  }
+
+  return null;
+}
+
+function buildSeasonEpisodeName(season, episode, ext) {
+  return `S${pad2(season)}E${pad2(episode)}${ext}`;
+}
+
 async function pathKind(value) {
   try {
     const stat = await fsp.stat(value);
@@ -214,33 +233,75 @@ export function createExecutor({ roots: rootOverrides = {} } = {}) {
         const dstDir = path.posix.join(showDir, `Season ${paddedSeason}`);
         await fsp.mkdir(dstDir, { recursive: true });
 
+        const existingNames = await fsp.readdir(dstDir);
+        const existingEntries = [];
+        let highestEpisode = 0;
+        for (const name of sortByPathByteOrder(existingNames)) {
+          if (!isVideoFilename(name)) continue;
+          const entryPath = path.posix.join(dstDir, name);
+          try {
+            const stat = await fsp.stat(entryPath);
+            if (!stat.isFile()) continue;
+            const episodeNumber = extractEpisodeNumber(name);
+            if (Number.isInteger(episodeNumber) && episodeNumber > highestEpisode) {
+              highestEpisode = episodeNumber;
+            }
+            existingEntries.push({
+              path: entryPath,
+              dev: stat.dev,
+              ino: stat.ino,
+            });
+          } catch {
+            // Keep linking stable even if one existing file vanishes mid-run.
+          }
+        }
+
+        let nextEpisode = Math.max(highestEpisode, existingEntries.length) + 1;
+
         const lines = [];
         let linkedCount = 0;
         let skippedCount = 0;
         for (const src of files) {
-          const baseName = path.posix.basename(src);
-          const dst = path.posix.join(dstDir, baseName);
-          try {
-            const existing = await fsp.stat(dst);
-            if (!existing.isFile()) {
-              throw new ExecutorInputError(`Destination exists and is not a file: ${dst}`);
-            }
-            const srcStat = await fsp.stat(src);
-            if (existing.dev === srcStat.dev && existing.ino === srcStat.ino) {
-              skippedCount += 1;
-              lines.push(`  = ${dst} (already linked)`);
-              continue;
-            }
+          const srcStat = await fsp.stat(src);
+          const existingLink = existingEntries.find((entry) => entry.dev === srcStat.dev && entry.ino === srcStat.ino);
+          if (existingLink) {
             skippedCount += 1;
-            lines.push(`  ! ${dst} (existing file kept)`);
+            lines.push(`  = ${existingLink.path} (already linked)`);
             continue;
-          } catch (error) {
-            if (error?.code !== "ENOENT") throw error;
           }
-          await replaceHardlink(src, dst);
-          linkedCount += 1;
-          lines.push(`  ${src}`);
-          lines.push(`  -> ${dst}`);
+
+          const ext = path.posix.extname(src);
+          let dst = "";
+          while (true) {
+            const candidateName = buildSeasonEpisodeName(paddedSeason, nextEpisode, ext);
+            dst = path.posix.join(dstDir, candidateName);
+            try {
+              const existing = await fsp.stat(dst);
+              if (!existing.isFile()) {
+                throw new ExecutorInputError(`Destination exists and is not a file: ${dst}`);
+              }
+              if (existing.dev === srcStat.dev && existing.ino === srcStat.ino) {
+                skippedCount += 1;
+                lines.push(`  = ${dst} (already linked)`);
+                break;
+              }
+              nextEpisode += 1;
+              continue;
+            } catch (error) {
+              if (error?.code !== "ENOENT") throw error;
+              await replaceHardlink(src, dst);
+              linkedCount += 1;
+              lines.push(`  ${src}`);
+              lines.push(`  -> ${dst}`);
+              existingEntries.push({
+                path: dst,
+                dev: srcStat.dev,
+                ino: srcStat.ino,
+              });
+              nextEpisode += 1;
+              break;
+            }
+          }
         }
 
         lines.push("Linked season:");

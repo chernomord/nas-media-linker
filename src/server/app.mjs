@@ -16,6 +16,7 @@ import { buildLoginHtml, buildUiHtml } from "./ui/ui-renderer.mjs";
 
 export function createApp({
   runToken = runtimeConfig.runToken,
+  assetVersion = runtimeConfig.assetVersion,
   executor = defaultExecutor,
   savedTemplatesStore = defaultSavedTemplatesStore,
   appAssetsDir = runtimeConfig.appAssetsDir,
@@ -36,8 +37,8 @@ export function createApp({
     sessionIdleMs: appAuthConfig.sessionIdleMs,
   });
   const auth = createTokenAuth(runToken);
-  const uiHtml = buildUiHtml(runToken);
-  const loginHtml = buildLoginHtml();
+  const uiHtml = buildUiHtml(runToken, assetVersion);
+  const loginHtml = buildLoginHtml(assetVersion);
 
   app.use(sessionAuth.attachSession);
   app.use(express.json({ limit: "64kb" }));

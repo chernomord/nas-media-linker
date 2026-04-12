@@ -436,8 +436,8 @@ test("root html boots from local static assets without external CDN URLs", async
     assert.equal(htmlResp.status, 200);
     const html = await htmlResp.text();
 
-    assert.match(html, /href="\/assets\/app\/app\.css"/);
-    assert.match(html, /src="\/assets\/app\/app\.js"/);
+    assert.match(html, /href="\/assets\/app\/app\.css\?v=[^"]+"/);
+    assert.match(html, /src="\/assets\/app\/app\.js\?v=[^"]+"/);
     assert.doesNotMatch(html, /cdn\.jsdelivr\.net|unpkg\.com|fonts\.googleapis\.com|shoelace\.style|esm\.sh|tailwindcss\.com/);
 
     const cssResp = await fetch(`${baseUrl}/assets/app/app.css`);
@@ -472,6 +472,8 @@ test("helper shells expose i18n hooks for title, locale switcher, and translated
     const loginResp = await fetch(`${baseUrl}/`);
     assert.equal(loginResp.status, 200);
     const loginHtml = await loginResp.text();
+    assert.match(loginHtml, /href="\/assets\/app\/app\.css\?v=[^"]+"/);
+    assert.match(loginHtml, /src="\/assets\/app\/app\.js\?v=[^"]+"/);
     assert.match(loginHtml, /data-page-title-key="page\.login\.title"/);
     assert.match(loginHtml, /data-locale-switcher/);
     assert.match(loginHtml, /data-i18n="login\.submit"/);
@@ -484,6 +486,8 @@ test("helper shells expose i18n hooks for title, locale switcher, and translated
     });
     assert.equal(appResp.status, 200);
     const appHtml = await appResp.text();
+    assert.match(appHtml, /href="\/assets\/app\/app\.css\?v=[^"]+"/);
+    assert.match(appHtml, /src="\/assets\/app\/app\.js\?v=[^"]+"/);
     assert.match(appHtml, /data-page-title-key="page\.app\.title"/);
     assert.match(appHtml, /data-locale-switcher/);
     assert.match(appHtml, /data-i18n="header\.view_log"/);

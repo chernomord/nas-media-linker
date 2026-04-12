@@ -25,6 +25,17 @@ test("browse list keeps long names truncated inside the card", async ({ page }) 
   const label = row.locator('[data-role="name"]').first();
   await expect(label).toBeVisible();
 
+  const tooltipState = await label.evaluate((element) => {
+    const portal = document.getElementById("floating_tooltip_portal");
+    const tooltip = portal?.querySelector('[data-role="floating-tooltip"]');
+    return {
+      hasTitle: element.hasAttribute("title"),
+    portalId: portal?.id ?? "",
+    tooltipRole: tooltip?.getAttribute("data-role") ?? "",
+    tooltipHidden: Boolean(tooltip?.hidden),
+    };
+  });
+
   const metrics = await label.evaluate((element) => {
     const rowElement = element.closest("li");
     const listElement = document.querySelector("#list");
@@ -41,6 +52,57 @@ test("browse list keeps long names truncated inside the card", async ({ page }) 
     };
   });
 
+  expect(tooltipState.hasTitle).toBe(false);
+  expect(tooltipState.portalId).toBe("floating_tooltip_portal");
+  expect(tooltipState.tooltipRole).toBe("name-tooltip");
+  expect(tooltipState.tooltipHidden).toBe(true);
+  expect(metrics.textOverflow).toBe("ellipsis");
+  expect(metrics.whiteSpace).toBe("nowrap");
+  expect(metrics.scrollWidth).toBeGreaterThan(metrics.clientWidth);
+  expect(metrics.rowRight).toBeLessThanOrEqual(metrics.listRight + 1);
+  await expect(row.locator("sl-button").last()).toBeVisible();
+});
+
+test("saved list keeps long names truncated inside the card", async ({ page }) => {
+  await page.goto("/");
+
+  const row = page.locator("#saved_list li").first();
+  await expect(row).toBeVisible();
+
+  const label = row.locator('[data-role="name"]').first();
+  await expect(label).toBeVisible();
+
+  const tooltipState = await label.evaluate((element) => {
+    const portal = document.getElementById("floating_tooltip_portal");
+    const tooltip = portal?.querySelector('[data-role="floating-tooltip"]');
+    return {
+      hasTitle: element.hasAttribute("title"),
+      portalId: portal?.id ?? "",
+      tooltipRole: tooltip?.getAttribute("data-role") ?? "",
+      tooltipHidden: Boolean(tooltip?.hidden),
+    };
+  });
+
+  const metrics = await label.evaluate((element) => {
+    const rowElement = element.closest("li");
+    const listElement = document.querySelector("#saved_list");
+    const style = getComputedStyle(element);
+    const rowRect = rowElement?.getBoundingClientRect();
+    const listRect = listElement?.getBoundingClientRect();
+    return {
+      clientWidth: element.clientWidth,
+      scrollWidth: element.scrollWidth,
+      textOverflow: style.textOverflow,
+      whiteSpace: style.whiteSpace,
+      rowRight: rowRect?.right ?? 0,
+      listRight: listRect?.right ?? 0,
+    };
+  });
+
+  expect(tooltipState.hasTitle).toBe(false);
+  expect(tooltipState.portalId).toBe("floating_tooltip_portal");
+  expect(tooltipState.tooltipRole).toBe("name-tooltip");
+  expect(tooltipState.tooltipHidden).toBe(true);
   expect(metrics.textOverflow).toBe("ellipsis");
   expect(metrics.whiteSpace).toBe("nowrap");
   expect(metrics.scrollWidth).toBeGreaterThan(metrics.clientWidth);

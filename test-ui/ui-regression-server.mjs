@@ -16,7 +16,18 @@ const FIXTURE_ITEMS = [
 ];
 
 function makeSavedTemplatesStore() {
-  const items = [];
+  const items = [
+    {
+      id: "saved-long-1",
+      kind: "season",
+      title: "A Knight of the Seven Kingdoms Season One A Very Long Saved Title That Should Truncate On Mobile",
+      year: 2026,
+      season: 1,
+      srcPath: "/volume1/torrents/Shows/A Knight of the Seven Kingdoms Season One A Very Long Source Folder Name",
+      createdAt: "2026-04-04T00:00:00.000Z",
+      updatedAt: "2026-04-04T00:00:00.000Z",
+    },
+  ];
   return {
     list() {
       return [...items];

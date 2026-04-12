@@ -188,7 +188,7 @@ test("linkMovie rejects control characters in source paths", async () => {
   }
 });
 
-test("linkSeason links all video files preserving basenames", async () => {
+test("linkSeason links all video files as canonical season episodes", async () => {
   const fixture = await makeFixture();
   try {
     const srcDir = path.join(fixture.roots.torrents, "Show");
@@ -243,8 +243,8 @@ test("linkSeason allows printable Unicode source paths", async () => {
     });
 
     const dstDir = path.join(fixture.roots.tv, "Сериал (2025)", "Season 01");
-    const ep1Dst = path.join(dstDir, "Серия 01.mkv");
-    const ep2Dst = path.join(dstDir, "Серия 02.mp4");
+    const ep1Dst = path.join(dstDir, "S01E01.mkv");
+    const ep2Dst = path.join(dstDir, "S01E02.mp4");
     const ep1Stat = await stat(ep1);
     const ep1DstStat = await stat(ep1Dst);
     const ep2Stat = await stat(ep2);
@@ -260,7 +260,7 @@ test("linkSeason allows printable Unicode source paths", async () => {
   }
 });
 
-test("linkSeason appends new episodes and skips colliding basenames", async () => {
+test("linkSeason appends later release blocks with continuous episode numbers", async () => {
   const fixture = await makeFixture();
   try {
     const firstSrcDir = path.join(fixture.roots.torrents, "Release One");
@@ -268,14 +268,18 @@ test("linkSeason appends new episodes and skips colliding basenames", async () =
     await mkdir(firstSrcDir);
     await mkdir(secondSrcDir);
 
-    const firstSrc1 = path.join(firstSrcDir, "S02E01.mkv");
-    const firstSrc2 = path.join(firstSrcDir, "S02E02.mkv");
-    const secondSrc2 = path.join(secondSrcDir, "S02E02.mkv");
-    const secondSrc3 = path.join(secondSrcDir, "S02E03.mp4");
-    await writeFile(firstSrc1, "one");
-    await writeFile(firstSrc2, "two");
-    await writeFile(secondSrc2, "two-again");
-    await writeFile(secondSrc3, "three");
+    const firstSources = [];
+    const secondSources = [];
+    for (let i = 1; i <= 7; i += 1) {
+      const src = path.join(firstSrcDir, `[Release-One] Episode ${String(i).padStart(2, "0")}.mkv`);
+      firstSources.push(src);
+      await writeFile(src, `one-${i}`);
+    }
+    for (let i = 1; i <= 11; i += 1) {
+      const src = path.join(secondSrcDir, `[Release-Two] Episode ${String(i).padStart(2, "0")}.mkv`);
+      secondSources.push(src);
+      await writeFile(src, `two-${i}`);
+    }
 
     const firstResult = await fixture.executor.linkSeason({
       srcDir: firstSrcDir,
@@ -292,27 +296,28 @@ test("linkSeason appends new episodes and skips colliding basenames", async () =
 
     const dstDir = path.join(fixture.roots.tv, "Show (2025)", "Season 02");
     const names = (await readdir(dstDir)).sort();
-    const ep1Dst = path.join(dstDir, "S02E01.mkv");
-    const ep2Dst = path.join(dstDir, "S02E02.mkv");
-    const ep3Dst = path.join(dstDir, "S02E03.mp4");
-    const firstSrc1Stat = await stat(firstSrc1);
-    const firstSrc2Stat = await stat(firstSrc2);
-    const secondSrc3Stat = await stat(secondSrc3);
-    const ep1DstStat = await stat(ep1Dst);
-    const ep2DstStat = await stat(ep2Dst);
-    const ep3DstStat = await stat(ep3Dst);
+    const firstDstStats = [];
+    for (let i = 1; i <= 7; i += 1) {
+      firstDstStats.push(await stat(path.join(dstDir, `S02E${String(i).padStart(2, "0")}.mkv`)));
+    }
+    const secondDstStats = [];
+    for (let i = 8; i <= 18; i += 1) {
+      secondDstStats.push(await stat(path.join(dstDir, `S02E${String(i).padStart(2, "0")}.mkv`)));
+    }
 
     assert.equal(firstResult.code, 0);
     assert.equal(secondResult.code, 0);
-    assert.equal(names.length, 3);
-    assert.deepEqual(names, ["S02E01.mkv", "S02E02.mkv", "S02E03.mp4"]);
-    assert.equal(firstSrc1Stat.ino, ep1DstStat.ino);
-    assert.equal(firstSrc2Stat.ino, ep2DstStat.ino);
-    assert.equal(secondSrc3Stat.ino, ep3DstStat.ino);
-    assert.match(secondResult.stdout, /existing file kept/);
+    assert.equal(names.length, 18);
+    assert.deepEqual(names, Array.from({ length: 18 }, (_, idx) => `S02E${String(idx + 1).padStart(2, "0")}.mkv`));
+    for (let i = 0; i < 7; i += 1) {
+      assert.equal((await stat(firstSources[i])).ino, firstDstStats[i].ino);
+    }
+    for (let i = 0; i < 11; i += 1) {
+      assert.equal((await stat(secondSources[i])).ino, secondDstStats[i].ino);
+    }
     assert.match(secondResult.stdout, /Linked season:/);
-    assert.match(secondResult.stdout, /linked: 1/);
-    assert.match(secondResult.stdout, /skipped: 1/);
+    assert.match(secondResult.stdout, /linked: 11/);
+    assert.match(secondResult.stdout, /skipped: 0/);
   } finally {
     await rm(fixture.base, { recursive: true, force: true });
   }

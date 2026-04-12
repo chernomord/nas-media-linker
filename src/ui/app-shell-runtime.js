@@ -9,12 +9,6 @@ function onReady(callback) {
   callback();
 }
 
-function isSafariBrowser() {
-  const userAgent = navigator.userAgent || "";
-  const vendor = navigator.vendor || "";
-  return /Safari/i.test(userAgent) && /Apple/i.test(vendor) && !/CriOS|Chrome|Chromium|Edg|FxiOS/i.test(userAgent);
-}
-
 function cloneTemplate(id) {
   const template = document.getElementById(id);
   if (!(template instanceof HTMLTemplateElement)) {
@@ -309,8 +303,8 @@ function initAppShell() {
     movies: document.body.dataset.rootMovies || "",
     tv: document.body.dataset.rootTv || "",
   };
-  const USE_NATIVE_NAME_TOOLTIP = isSafariBrowser();
   const BROWSE_ROW_TEMPLATE_ID = "browse-row-template";
+  const SAVED_ROW_TEMPLATE_ID = "saved-row-template";
 
   let pendingDeleteId = null;
   let savedItemsCache = [];
@@ -408,14 +402,113 @@ function initAppShell() {
     }
   }
 
-  function showCopied(tip) {
-    if (!tip) return;
-    tip.content = t("browse.copied");
-    tip.show();
-    setTimeout(() => {
-      tip.hide();
-      tip.content = t("browse.copy_path");
-    }, 1500);
+  const FLOATING_TOOLTIP_PORTAL_ID = "floating_tooltip_portal";
+  let activeFloatingTooltip = null;
+  let activeFloatingTooltipAnchor = null;
+  let floatingTooltipListenersBound = false;
+
+  function ensureFloatingTooltipPortal() {
+    let portal = document.getElementById(FLOATING_TOOLTIP_PORTAL_ID);
+    if (portal) return portal;
+
+    portal = document.createElement("div");
+    portal.id = FLOATING_TOOLTIP_PORTAL_ID;
+    portal.className = "floating-tooltip-portal";
+    portal.setAttribute("aria-hidden", "true");
+
+    const tooltip = document.createElement("div");
+    tooltip.dataset.role = "floating-tooltip";
+    tooltip.className = "floating-tooltip";
+    tooltip.hidden = true;
+    portal.appendChild(tooltip);
+
+    document.body.appendChild(portal);
+    return portal;
+  }
+
+  function positionFloatingTooltip() {
+    if (!activeFloatingTooltip || !activeFloatingTooltipAnchor) return;
+
+    const tooltip = activeFloatingTooltip;
+    const anchor = activeFloatingTooltipAnchor;
+    const rect = anchor.getBoundingClientRect();
+    const gap = 10;
+    const arrow = 8;
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+
+    tooltip.hidden = false;
+    tooltip.style.visibility = "hidden";
+    tooltip.style.left = "0px";
+    tooltip.style.top = "0px";
+
+    const tooltipRect = tooltip.getBoundingClientRect();
+    const placeAbove = rect.top >= tooltipRect.height + gap + arrow + 8;
+    const rawTop = placeAbove
+      ? rect.top - tooltipRect.height - gap - arrow
+      : rect.bottom + gap + arrow;
+    const top = Math.max(gap, Math.min(rawTop, viewportHeight - gap - tooltipRect.height));
+    const rawLeft = rect.left + rect.width / 2 - tooltipRect.width / 2;
+    const left = Math.max(gap, Math.min(rawLeft, viewportWidth - gap - tooltipRect.width));
+
+    tooltip.dataset.placement = placeAbove ? "top" : "bottom";
+    tooltip.style.left = `${Math.round(left)}px`;
+    tooltip.style.top = `${Math.round(top)}px`;
+    tooltip.style.visibility = "visible";
+  }
+
+  function showFloatingTooltip(anchor, content) {
+    if (!content) return;
+    const portal = ensureFloatingTooltipPortal();
+    const tooltip = portal.querySelector('[data-role="floating-tooltip"]');
+    if (!(tooltip instanceof HTMLElement)) return;
+
+    activeFloatingTooltip = tooltip;
+    activeFloatingTooltipAnchor = anchor;
+    tooltip.textContent = content;
+    tooltip.hidden = false;
+    positionFloatingTooltip();
+
+    if (!floatingTooltipListenersBound) {
+      window.addEventListener("scroll", positionFloatingTooltip, true);
+      window.addEventListener("resize", positionFloatingTooltip);
+      floatingTooltipListenersBound = true;
+    }
+  }
+
+  function hideFloatingTooltip() {
+    if (!activeFloatingTooltip) return;
+    activeFloatingTooltip.hidden = true;
+    activeFloatingTooltip = null;
+    activeFloatingTooltipAnchor = null;
+
+    if (floatingTooltipListenersBound) {
+      window.removeEventListener("scroll", positionFloatingTooltip, true);
+      window.removeEventListener("resize", positionFloatingTooltip);
+      floatingTooltipListenersBound = false;
+    }
+  }
+
+  function bindFloatingTooltip(anchor, content) {
+    const show = () => showFloatingTooltip(anchor, content);
+    const hide = () => hideFloatingTooltip();
+
+    anchor.addEventListener("pointerenter", show);
+    anchor.addEventListener("mouseenter", show);
+    anchor.addEventListener("focusin", show);
+    anchor.addEventListener("pointerleave", hide);
+    anchor.addEventListener("mouseleave", hide);
+    anchor.addEventListener("focusout", hide);
+  }
+
+  function showTransientTooltip(anchor, content, durationMs = 1500) {
+    if (!content) return;
+    showFloatingTooltip(anchor, content);
+    window.setTimeout(() => {
+      if (activeFloatingTooltipAnchor === anchor) {
+        hideFloatingTooltip();
+      }
+    }, durationMs);
   }
 
   async function requestJson(url, { method = "GET", body } = {}) {
@@ -762,6 +855,7 @@ function initAppShell() {
   function renderSaved() {
     const list = $("saved_list");
     const items = readSaved();
+    hideFloatingTooltip();
     list.innerHTML = "";
     if (!savedItemsLoaded) {
       const loading = document.createElement("sl-alert");
@@ -792,24 +886,23 @@ function initAppShell() {
     }
 
     for (const it of items) {
-      const li = document.createElement("li");
-      li.className = "border-b border-slate-100 last:border-b-0 py-1.5 text-slate-800";
+      const li = cloneTemplate(SAVED_ROW_TEMPLATE_ID);
+      const icon = li.querySelector('[data-role="icon"]');
+      const nameHost = li.querySelector('[data-role="name-host"]');
+      const actions = li.querySelector('[data-role="actions"]');
+      const nameNode = document.createElement("span");
+      const iconName = it.type === "movie" ? "film" : "folder";
+      const iconColor = it.type === "movie" ? "text-slate-500" : "text-amber-600";
+      const displayName = `${it.title}${it.type === "season" ? ` • S${it.season}` : ""} • ${it.year}`;
 
-      const tooltip = document.createElement("sl-tooltip");
-      tooltip.content = it.type === "movie" ? (it.src || "") : (it.srcDir || "");
-      tooltip.setAttribute("placement", "top");
+      icon.setAttribute("name", iconName);
+      icon.className = `${iconColor} flex-shrink-0`;
 
-      const row = document.createElement("div");
-      row.className = "flex items-center gap-2 min-w-0";
-
-      const label = document.createElement("span");
-      label.className = "truncate flex-1 min-w-0";
-      const seasonPart = it.type === "season" ? ` • S${it.season}` : "";
-      label.textContent = `${it.title}${seasonPart} • ${it.year}`;
-      row.appendChild(label);
-
-      const actions = document.createElement("div");
-      actions.className = "ml-2 flex items-center gap-2 text-xs flex-shrink-0";
+      nameNode.dataset.role = "name";
+      nameNode.className = "block min-w-0 flex-1 truncate";
+      nameNode.textContent = displayName;
+      nameHost.appendChild(nameNode);
+      bindFloatingTooltip(nameHost, displayName);
 
       const fillBtn = document.createElement("sl-button");
       fillBtn.setAttribute("size", "small");
@@ -818,9 +911,6 @@ function initAppShell() {
       fillIcon.setAttribute("name", "box-arrow-in-right");
       fillIcon.className = "text-blue-600";
       fillBtn.appendChild(fillIcon);
-      const fillTip = document.createElement("sl-tooltip");
-      fillTip.content = t("saved.fill_form");
-      fillTip.appendChild(fillBtn);
       fillBtn.onclick = () => {
         if (it.type === "movie") {
           $("m_src").value = it.src || "";
@@ -843,7 +933,8 @@ function initAppShell() {
         }
         syncRunButtons();
       };
-      actions.appendChild(fillTip);
+      actions.appendChild(fillBtn);
+      bindFloatingTooltip(fillBtn, t("saved.fill_form"));
 
       const delBtn = document.createElement("sl-button");
       delBtn.setAttribute("size", "small");
@@ -852,18 +943,12 @@ function initAppShell() {
       delIcon.setAttribute("name", "trash");
       delIcon.className = "text-rose-600";
       delBtn.appendChild(delIcon);
-      const delTip = document.createElement("sl-tooltip");
-      delTip.content = t("saved.delete");
-      delTip.appendChild(delBtn);
       delBtn.onclick = () => {
         pendingDeleteId = it.id;
         $("confirm_delete").show();
       };
-      actions.appendChild(delTip);
-
-      row.appendChild(actions);
-      tooltip.appendChild(row);
-      li.appendChild(tooltip);
+      actions.appendChild(delBtn);
+      bindFloatingTooltip(delBtn, t("saved.delete"));
 
       list.appendChild(li);
     }
@@ -871,53 +956,44 @@ function initAppShell() {
 
   function renderBrowseList(root, items) {
     const ul = $("list");
+    hideFloatingTooltip();
     ul.innerHTML = "";
     for (const it of items) {
       const li = cloneTemplate(BROWSE_ROW_TEMPLATE_ID);
       const icon = li.querySelector('[data-role="icon"]');
       const nameHost = li.querySelector('[data-role="name-host"]');
-      const copyTip = li.querySelector('[data-role="copy-tip"]');
       const copyBtn = li.querySelector('[data-role="copy-btn"]');
-      const fillTip = li.querySelector('[data-role="fill-tip"]');
       const fillBtn = li.querySelector('[data-role="fill-btn"]');
       const nameNode = document.createElement("span");
+      const iconName = it.type === "d" ? "folder" : "film";
+      const iconColor = it.type === "d" ? "text-amber-600" : "text-slate-500";
+      const displayName = it.name;
 
-      icon.setAttribute("name", it.type === "d" ? "folder" : "film");
-      icon.className = `${it.type === "d" ? "text-amber-600" : "text-slate-500"} flex-shrink-0`;
+      icon.setAttribute("name", iconName);
+      icon.className = `${iconColor} flex-shrink-0`;
 
       nameNode.dataset.role = "name";
       nameNode.className = "block min-w-0 flex-1 truncate";
-      nameNode.textContent = it.name;
-      if (USE_NATIVE_NAME_TOOLTIP) {
-        nameNode.title = it.name;
-        nameHost.appendChild(nameNode);
-      } else {
-        const nameTip = document.createElement("sl-tooltip");
-        nameTip.content = it.name;
-        nameTip.setAttribute("placement", "top");
-        nameTip.hoist = true;
-        nameTip.appendChild(nameNode);
-        nameHost.appendChild(nameTip);
-      }
+      nameNode.textContent = displayName;
+      nameHost.appendChild(nameNode);
+      bindFloatingTooltip(nameHost, displayName);
 
-      copyTip.content = t("browse.copy_path");
-      copyTip.setAttribute("trigger", "manual");
-      copyTip.hoist = true;
+      bindFloatingTooltip(copyBtn, t("browse.copy_path"));
       copyBtn.onclick = async () => {
         const path = `${root}/${it.name}`;
         try {
           await navigator.clipboard.writeText(path);
-          showCopied(copyTip);
+          showTransientTooltip(copyBtn, t("browse.copied"));
         } catch {
           const ok = fallbackCopy(path);
           if (ok) {
-            showCopied(copyTip);
+            showTransientTooltip(copyBtn, t("browse.copied"));
           } else {
             log(t("browse.clipboard_error"));
           }
         }
       };
-      fillTip.content = t("browse.fill_inputs");
+      bindFloatingTooltip(fillBtn, t("browse.fill_inputs"));
       fillBtn.onclick = () => {
         if (it.type === "d") {
           $("m_src").value = `${root}/${it.name}`;
@@ -1410,6 +1486,7 @@ function initAppShell() {
     }
   });
 
+  ensureFloatingTooltipPortal();
   renderSaved();
   syncRunButtons();
   $("root").value = "torrents";

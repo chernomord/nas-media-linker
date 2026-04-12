@@ -134,6 +134,8 @@ This syncs the checkout to `movies_linker@synology.local` over SSH and then runs
 
 `./deploy-local.sh` is the preferred local entrypoint for manual updates during development.
 
+Season linking normalizes episode filenames to a continuous `SxxEyy` sequence inside the target season folder, so later release blocks can append without colliding on `01..N` source naming.
+
 ## Minimal Env Surface
 
 Primary env:

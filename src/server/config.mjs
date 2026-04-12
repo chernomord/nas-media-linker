@@ -26,6 +26,7 @@ export const runtimeConfig = (() => {
 
   return {
     runToken: crypto.randomBytes(32).toString("hex"),
+    assetVersion: crypto.randomBytes(12).toString("hex"),
     repoRoot,
     port,
     uxStateDbPath,

@@ -14,14 +14,22 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
-export function buildUiHtml(runToken) {
+function assetSuffix(assetVersion) {
+  return `?v=${encodeURIComponent(assetVersion)}`;
+}
+
+export function buildUiHtml(runToken, assetVersion) {
   return UI_TEMPLATE
+    .replaceAll("/assets/app/app.css", `/assets/app/app.css${assetSuffix(assetVersion)}`)
+    .replaceAll("/assets/app/app.js", `/assets/app/app.js${assetSuffix(assetVersion)}`)
     .replaceAll("__RUN_TOKEN__", escapeHtml(runToken))
     .replaceAll("__TORRENTS_ROOT__", escapeHtml(TORRENTS_ROOT))
     .replaceAll("__MOVIES_ROOT__", escapeHtml(MOVIES_ROOT))
     .replaceAll("__TV_ROOT__", escapeHtml(TV_ROOT));
 }
 
-export function buildLoginHtml() {
-  return LOGIN_TEMPLATE;
+export function buildLoginHtml(assetVersion) {
+  return LOGIN_TEMPLATE
+    .replaceAll("/assets/app/app.css", `/assets/app/app.css${assetSuffix(assetVersion)}`)
+    .replaceAll("/assets/app/app.js", `/assets/app/app.js${assetSuffix(assetVersion)}`);
 }

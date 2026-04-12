@@ -90,7 +90,7 @@
         <sl-card class="glass-card">
           <h2 class="text-lg font-semibold text-slate-900" data-i18n="saved.title">Saved</h2>
           <p class="section-subheader" data-i18n="saved.subtitle">Quick form fill.</p>
-          <ul id="saved_list" class="mt-3 space-y-1 rounded-2xl border border-slate-200 bg-white/80 p-3 text-sm"></ul>
+          <ul id="saved_list" class="mt-3 w-full min-w-0 space-y-1 overflow-hidden rounded-2xl border border-slate-200 bg-white/80 p-3 text-sm"></ul>
         </sl-card>
 
         <sl-card class="glass-card">
@@ -125,16 +125,31 @@
           <div data-role="name-host" class="flex min-w-0 flex-1 items-center overflow-hidden"></div>
         </div>
         <div data-role="actions" class="ml-2 flex items-center gap-2 text-xs flex-shrink-0">
-          <sl-tooltip data-role="copy-tip" trigger="manual">
-            <sl-button data-role="copy-btn" size="small" variant="text">
-              <sl-icon name="clipboard" class="text-emerald-600" aria-hidden="true" library="default"></sl-icon>
-            </sl-button>
-          </sl-tooltip>
-          <sl-tooltip data-role="fill-tip">
-            <sl-button data-role="fill-btn" size="small" variant="text">
-              <sl-icon name="box-arrow-in-right" class="text-blue-600" aria-hidden="true" library="default"></sl-icon>
-            </sl-button>
-          </sl-tooltip>
+          <sl-button data-role="copy-btn" size="small" variant="text">
+            <sl-icon name="clipboard" class="text-emerald-600" aria-hidden="true" library="default"></sl-icon>
+          </sl-button>
+          <sl-button data-role="fill-btn" size="small" variant="text">
+            <sl-icon name="box-arrow-in-right" class="text-blue-600" aria-hidden="true" library="default"></sl-icon>
+          </sl-button>
+        </div>
+      </div>
+    </li>
+  </template>
+
+  <template id="saved-row-template">
+    <li class="border-b border-slate-100 last:border-b-0 py-1.5 text-slate-800 min-w-0 overflow-hidden">
+      <div class="flex w-full items-center gap-2 min-w-0 overflow-hidden">
+        <div data-role="label" class="flex w-0 min-w-0 flex-1 items-center gap-2 overflow-hidden">
+          <sl-icon data-role="icon" class="flex-shrink-0" aria-hidden="true" library="default"></sl-icon>
+          <div data-role="name-host" class="flex min-w-0 flex-1 items-center overflow-hidden"></div>
+        </div>
+        <div data-role="actions" class="ml-2 flex items-center gap-2 text-xs flex-shrink-0">
+          <sl-button data-role="fill-btn" size="small" variant="text">
+            <sl-icon name="box-arrow-in-right" class="text-blue-600" aria-hidden="true" library="default"></sl-icon>
+          </sl-button>
+          <sl-button data-role="del-btn" size="small" variant="text">
+            <sl-icon name="trash" class="text-rose-600" aria-hidden="true" library="default"></sl-icon>
+          </sl-button>
         </div>
       </div>
     </li>

@@ -281,6 +281,51 @@ sl-tab-panel::part(base) {
   display: none;
 }
 
+.floating-tooltip-portal {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  pointer-events: none;
+}
+
+.floating-tooltip {
+  position: fixed;
+  max-width: min(24rem, calc(100vw - 1.5rem));
+  padding: 0.55rem 0.8rem;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.96);
+  color: #f8fafc;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.28);
+  font-size: 0.75rem;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
+}
+
+.floating-tooltip::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  background: rgba(15, 23, 42, 0.96);
+  border-right: 1px solid rgba(148, 163, 184, 0.28);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.28);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.floating-tooltip[data-placement="top"]::after {
+  bottom: -5px;
+}
+
+.floating-tooltip[data-placement="bottom"]::after {
+  top: -5px;
+  transform: translateX(-50%) rotate(225deg);
+}
+
 .autocomplete-option {
   appearance: none;
   -webkit-appearance: none;
