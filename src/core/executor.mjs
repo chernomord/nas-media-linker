@@ -173,6 +173,22 @@ async function replaceHardlink(src, dst) {
   await fsp.link(src, dst);
 }
 
+async function clearDirectoryContents(dir) {
+  let names = [];
+  try {
+    names = await fsp.readdir(dir);
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+    return 0;
+  }
+
+  for (const name of sortByPathByteOrder(names)) {
+    await fsp.rm(path.posix.join(dir, name), { recursive: true, force: true });
+  }
+
+  return names.length;
+}
+
 export function createExecutor({ roots: rootOverrides = {} } = {}) {
   const roots = {
     torrents: DEFAULT_ROOTS.torrents,
@@ -213,7 +229,7 @@ export function createExecutor({ roots: rootOverrides = {} } = {}) {
       }
     },
 
-    async linkSeason({ srcDir, title, season, year }) {
+    async linkSeason({ srcDir, title, season, year, resetTarget = false }) {
       try {
         rejectUnsafePath(srcDir);
         if (!isUnder(srcDir, roots.torrents)) {
@@ -231,34 +247,42 @@ export function createExecutor({ roots: rootOverrides = {} } = {}) {
         const paddedSeason = pad2(season);
         const showDir = path.posix.join(roots.tv, `${safeTitle} (${year})`);
         const dstDir = path.posix.join(showDir, `Season ${paddedSeason}`);
+        const shouldResetTarget = resetTarget === true;
+        const cleanedCount = shouldResetTarget ? await clearDirectoryContents(dstDir) : 0;
         await fsp.mkdir(dstDir, { recursive: true });
 
-        const existingNames = await fsp.readdir(dstDir);
         const existingEntries = [];
         let highestEpisode = 0;
-        for (const name of sortByPathByteOrder(existingNames)) {
-          if (!isVideoFilename(name)) continue;
-          const entryPath = path.posix.join(dstDir, name);
-          try {
-            const stat = await fsp.stat(entryPath);
-            if (!stat.isFile()) continue;
-            const episodeNumber = extractEpisodeNumber(name);
-            if (Number.isInteger(episodeNumber) && episodeNumber > highestEpisode) {
-              highestEpisode = episodeNumber;
+        if (!shouldResetTarget) {
+          const existingNames = await fsp.readdir(dstDir);
+          for (const name of sortByPathByteOrder(existingNames)) {
+            if (!isVideoFilename(name)) continue;
+            const entryPath = path.posix.join(dstDir, name);
+            try {
+              const stat = await fsp.stat(entryPath);
+              if (!stat.isFile()) continue;
+              const episodeNumber = extractEpisodeNumber(name);
+              if (Number.isInteger(episodeNumber) && episodeNumber > highestEpisode) {
+                highestEpisode = episodeNumber;
+              }
+              existingEntries.push({
+                path: entryPath,
+                dev: stat.dev,
+                ino: stat.ino,
+              });
+            } catch {
+              // Keep linking stable even if one existing file vanishes mid-run.
             }
-            existingEntries.push({
-              path: entryPath,
-              dev: stat.dev,
-              ino: stat.ino,
-            });
-          } catch {
-            // Keep linking stable even if one existing file vanishes mid-run.
           }
         }
 
-        let nextEpisode = Math.max(highestEpisode, existingEntries.length) + 1;
+        let nextEpisode = shouldResetTarget ? 1 : Math.max(highestEpisode, existingEntries.length) + 1;
 
         const lines = [];
+        if (shouldResetTarget) {
+          lines.push(`  cleaned: ${cleanedCount}`);
+          lines.push("  reset_target: yes");
+        }
         let linkedCount = 0;
         let skippedCount = 0;
         for (const src of files) {

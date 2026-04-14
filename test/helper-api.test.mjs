@@ -492,6 +492,8 @@ test("helper shells expose i18n hooks for title, locale switcher, and translated
     assert.match(appHtml, /data-locale-switcher/);
     assert.match(appHtml, /data-i18n="header\.view_log"/);
     assert.match(appHtml, /data-i18n-label="session\.dialog_label"/);
+    assert.match(appHtml, /data-i18n="season\.reset_target"/);
+    assert.match(appHtml, /data-i18n="season\.reset_target_note"/);
   });
 });
 
@@ -1182,6 +1184,53 @@ test("season endpoint returns executor-error shape for control characters under 
       code: 2,
       stdout: "",
       stderr: "ERR: Control characters in path\n",
+    });
+  });
+});
+
+test("season endpoint forwards resetTarget flag to executor", async () => {
+  let observedInput = null;
+  const app = createApp({
+    runToken: "test-token",
+    executor: {
+      async linkMovie() { return { code: 0, stdout: "", stderr: "" }; },
+      async linkSeason(input) {
+        observedInput = input;
+        return { code: 0, stdout: "season-reset\n", stderr: "" };
+      },
+      async listDir() { return { ok: true, code: 0, items: [] }; },
+    },
+    savedTemplatesStore: makeSavedTemplatesStore(),
+  });
+
+  await withServer(app, async (baseUrl) => {
+    const resp = await fetch(`${baseUrl}/api/link/season`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        ...authHeaders({ runToken: "test-token" }),
+      },
+      body: JSON.stringify({
+        srcDir: `${TORRENTS_ROOT}/Show`,
+        title: "Show",
+        season: "1",
+        year: "2024",
+        resetTarget: true,
+      }),
+    });
+    assert.equal(resp.status, 200);
+    assert.deepEqual(observedInput, {
+      srcDir: `${TORRENTS_ROOT}/Show`,
+      title: "Show",
+      season: "1",
+      year: "2024",
+      resetTarget: true,
+    });
+    assert.deepEqual(await resp.json(), {
+      ok: true,
+      code: 0,
+      stdout: "season-reset\n",
+      stderr: "",
     });
   });
 });

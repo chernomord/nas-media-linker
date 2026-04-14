@@ -56,6 +56,10 @@
                   <sl-button id="s_run" variant="success" size="small" data-i18n="season.run">Link season</sl-button>
                   <sl-checkbox id="s_save" size="small" data-i18n="common.save">Save</sl-checkbox>
                 </div>
+                <div class="grid gap-1">
+                  <sl-checkbox id="s_reset_target" size="small" data-i18n="season.reset_target">Clear target season before linking</sl-checkbox>
+                  <p class="text-xs leading-snug text-amber-700" data-i18n="season.reset_target_note">Deletes existing linked files in the selected season folder before relinking.</p>
+                </div>
                 <sl-tag id="s_status" size="small" variant="neutral" class="mt-2 hidden"></sl-tag>
                 <div id="s_preview_list" class="mt-3 grid gap-3 hidden"></div>
               </div>
@@ -143,14 +147,7 @@
           <sl-icon data-role="icon" class="flex-shrink-0" aria-hidden="true" library="default"></sl-icon>
           <div data-role="name-host" class="flex min-w-0 flex-1 items-center overflow-hidden"></div>
         </div>
-        <div data-role="actions" class="ml-2 flex items-center gap-2 text-xs flex-shrink-0">
-          <sl-button data-role="fill-btn" size="small" variant="text">
-            <sl-icon name="box-arrow-in-right" class="text-blue-600" aria-hidden="true" library="default"></sl-icon>
-          </sl-button>
-          <sl-button data-role="del-btn" size="small" variant="text">
-            <sl-icon name="trash" class="text-rose-600" aria-hidden="true" library="default"></sl-icon>
-          </sl-button>
-        </div>
+        <div data-role="actions" class="ml-2 flex items-center gap-2 text-xs flex-shrink-0"></div>
       </div>
     </li>
   </template>

@@ -780,6 +780,7 @@ function initAppShell() {
       title: inputValue("s_title"),
       season: inputValue("s_season"),
       year: inputValue("s_year"),
+      resetTarget: Boolean($("s_reset_target")?.checked),
     };
   }
 
@@ -925,6 +926,7 @@ function initAppShell() {
           $("s_title").value = it.title;
           $("s_season").value = it.season;
           $("s_year").value = it.year;
+          $("s_reset_target").checked = false;
           flashField("s_src");
           flashField("s_title");
           flashField("s_season");
@@ -998,6 +1000,7 @@ function initAppShell() {
         if (it.type === "d") {
           $("m_src").value = `${root}/${it.name}`;
           $("s_src").value = `${root}/${it.name}`;
+          $("s_reset_target").checked = false;
           flashField("m_src");
           flashField("s_src");
           syncRunButtons();
@@ -1353,6 +1356,7 @@ function initAppShell() {
       return;
     }
     const shouldSave = isChecked("s_save");
+    const resetTarget = isChecked("s_reset_target");
     const entry = shouldSave ? seasonEntryFromForm() : null;
     setLinkStatus("s_status", "info", t("status.running"));
     try {
@@ -1361,6 +1365,7 @@ function initAppShell() {
         title: $("s_title").value,
         season: $("s_season").value,
         year: $("s_year").value,
+        resetTarget,
       });
       if (isSessionExpiredResult(result)) {
         setLinkStatus("s_status", "warn", t("status.session_expired"));
@@ -1388,6 +1393,9 @@ function initAppShell() {
     } finally {
       if (entry) {
         await saveItem(entry);
+      }
+      if (resetTarget) {
+        $("s_reset_target").checked = false;
       }
     }
   };

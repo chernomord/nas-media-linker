@@ -363,6 +363,52 @@ test("linkSeason is idempotent when relinking the same season source", async () 
   }
 });
 
+test("linkSeason can clear an existing target season before relinking", async () => {
+  const fixture = await makeFixture();
+  try {
+    const srcDir = path.join(fixture.roots.torrents, "Release");
+    await mkdir(srcDir);
+
+    const sourceA = path.join(srcDir, "Episode 01.mkv");
+    const sourceB = path.join(srcDir, "Episode 02.mkv");
+    await writeFile(sourceA, "new-a");
+    await writeFile(sourceB, "new-b");
+
+    const dstDir = path.join(fixture.roots.tv, "Show (2025)", "Season 01");
+    await mkdir(dstDir, { recursive: true });
+    await writeFile(path.join(dstDir, "S01E07.mkv"), "stale-a");
+    await writeFile(path.join(dstDir, "S01E08.mkv"), "stale-b");
+
+    const result = await fixture.executor.linkSeason({
+      srcDir,
+      title: "Show",
+      season: "1",
+      year: "2025",
+      resetTarget: true,
+    });
+
+    const names = (await readdir(dstDir)).sort();
+    const dstA = path.join(dstDir, "S01E01.mkv");
+    const dstB = path.join(dstDir, "S01E02.mkv");
+    const sourceAStat = await stat(sourceA);
+    const sourceBStat = await stat(sourceB);
+    const dstAStat = await stat(dstA);
+    const dstBStat = await stat(dstB);
+
+    assert.equal(result.code, 0);
+    assert.equal(result.stderr, "");
+    assert.deepEqual(names, ["S01E01.mkv", "S01E02.mkv"]);
+    assert.equal(sourceAStat.ino, dstAStat.ino);
+    assert.equal(sourceBStat.ino, dstBStat.ino);
+    assert.match(result.stdout, /cleaned:\s*2/);
+    assert.match(result.stdout, /reset_target:\s*yes/);
+    assert.match(result.stdout, /linked:\s*2/);
+    assert.match(result.stdout, /skipped:\s*0/);
+  } finally {
+    await rm(fixture.base, { recursive: true, force: true });
+  }
+});
+
 test("linkSeason rejects control characters in source paths", async () => {
   const fixture = await makeFixture();
   try {

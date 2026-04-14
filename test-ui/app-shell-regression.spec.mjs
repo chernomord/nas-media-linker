@@ -60,6 +60,7 @@ test("browse list keeps long names truncated inside the card", async ({ page }) 
   expect(metrics.whiteSpace).toBe("nowrap");
   expect(metrics.scrollWidth).toBeGreaterThan(metrics.clientWidth);
   expect(metrics.rowRight).toBeLessThanOrEqual(metrics.listRight + 1);
+  await expect(row.locator("sl-button")).toHaveCount(2);
   await expect(row.locator("sl-button").last()).toBeVisible();
 });
 
