@@ -1004,12 +1004,12 @@ function initAppShell() {
           flashField("m_src");
           flashField("s_src");
           syncRunButtons();
+          return;
         }
+        $("m_src").value = `${root}/${it.name}`;
+        flashField("m_src");
+        syncRunButtons();
       };
-      if (it.type !== "d") {
-        fillBtn.disabled = true;
-        fillBtn.setAttribute("aria-disabled", "true");
-      }
 
       ul.appendChild(li);
     }

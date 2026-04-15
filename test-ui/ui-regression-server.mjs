@@ -13,6 +13,7 @@ const FIXTURE_ITEMS = [
   { type: "d", name: "A Knight of the Seven Kingdoms (Season 1) DV HDR10 WEB-DL 2160p" },
   { type: "d", name: "A.Knight.of.the.Seven.Kingdoms.S01.2160p.2026.2160p.WEB-DL.HDR.H.265.Master5" },
   { type: "d", name: "Parks.and.Recreation.S01.1080p.AMZN.WEB-DL.Rus.Eng.Subtitles.Multi.Audio.Very.Long.Release.Name" },
+  { type: "f", name: "Standalone.Movie.2024.1080p.WEB-DL.H.265.mkv" },
 ];
 
 function makeSavedTemplatesStore() {
