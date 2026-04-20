@@ -81,6 +81,40 @@ test("browse file rows can fill the movie source field", async ({ page }) => {
   await expect(page.locator("#s_src")).toHaveValue("");
 });
 
+test("preview cards keep long titles inside the linking column", async ({ page }) => {
+  await page.goto("/");
+
+  await setShoelaceValue(page, "#m_title", "Kimetsu");
+  await setShoelaceValue(page, "#m_year", "2024");
+
+  await page.waitForFunction(() => {
+    const list = document.getElementById("m_preview_list");
+    return Boolean(list && !list.classList.contains("hidden") && list.children.length > 0);
+  });
+
+  const card = page.locator("#m_preview_list > div").first();
+  await expect(card).toBeVisible();
+  await expect(card.locator("sl-button")).toHaveCount(1);
+
+  const metrics = await card.evaluate((element) => {
+    const list = document.getElementById("m_preview_list");
+    const cardRect = element.getBoundingClientRect();
+    const listRect = list?.getBoundingClientRect();
+    const style = getComputedStyle(element);
+    return {
+      cardRight: cardRect?.right ?? 0,
+      listRight: listRect?.right ?? 0,
+      cardWidth: cardRect?.width ?? 0,
+      listWidth: listRect?.width ?? 0,
+      overflow: style.overflow,
+    };
+  });
+
+  expect(metrics.overflow).toBe("hidden");
+  expect(metrics.cardRight).toBeLessThanOrEqual(metrics.listRight + 1);
+  expect(metrics.cardWidth).toBeLessThanOrEqual(metrics.listWidth + 1);
+});
+
 test("saved list keeps long names truncated inside the card", async ({ page }) => {
   await page.goto("/");
 

@@ -1135,7 +1135,7 @@ function initAppShell() {
 
     for (const item of items) {
       const card = document.createElement("div");
-      card.className = "flex gap-3 rounded-2xl border border-slate-200 bg-white/90 p-3 text-slate-800";
+      card.className = "flex w-full min-w-0 gap-3 overflow-hidden rounded-2xl border border-slate-200 bg-white/90 p-3 text-slate-800";
 
       const imgWrap = document.createElement("div");
       imgWrap.className = "h-24 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100";
@@ -1160,23 +1160,23 @@ function initAppShell() {
       card.appendChild(imgWrap);
 
       const body = document.createElement("div");
-      body.className = "flex min-w-0 flex-1 flex-col gap-2";
+      body.className = "flex min-w-0 flex-1 flex-col gap-2 overflow-hidden";
 
       const title = document.createElement("div");
-      title.className = "text-sm font-semibold text-slate-900 truncate";
+      title.className = "min-w-0 truncate text-sm font-semibold text-slate-900";
       const year = item.year ? ` (${item.year})` : "";
       title.textContent = `${item.title || t("preview.untitled")}${year}`;
       body.appendChild(title);
 
       if (item.summary) {
         const summary = document.createElement("div");
-        summary.className = "text-xs text-slate-600 max-h-16 overflow-hidden";
+        summary.className = "max-h-16 overflow-hidden text-xs text-slate-600 break-words";
         summary.textContent = item.summary;
         body.appendChild(summary);
       }
 
       const metaRow = document.createElement("div");
-      metaRow.className = "flex items-center justify-between gap-2";
+      metaRow.className = "flex min-w-0 items-center justify-between gap-2";
 
       const badge = document.createElement("sl-tag");
       badge.setAttribute("size", "small");
