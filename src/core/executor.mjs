@@ -1,7 +1,7 @@
 import path from "node:path";
 import { promises as fsp } from "node:fs";
 
-export const TORRENTS_ROOT = "/volume1/Movies/Torrents";
+export const TORRENTS_ROOT = "/volume1/Movies/qbt-downloads";
 export const MOVIES_ROOT = "/volume1/Movies/Movies";
 export const TV_ROOT = "/volume1/Movies/TV Shows";
 export const ALLOWED_LIST_ROOTS = [TORRENTS_ROOT, MOVIES_ROOT, TV_ROOT];
@@ -75,7 +75,9 @@ export function isUnder(value, root) {
 
 export function isAllowedListDir(dir, roots = DEFAULT_ROOTS) {
   if (typeof dir !== "string") return false;
-  return [roots.torrents, roots.movies, roots.tv].some((root) => dir === root || dir.startsWith(root + "/"));
+  return [roots.torrents, roots.movies, roots.tv].some(
+    (root) => dir === root || dir.startsWith(root + "/"),
+  );
 }
 
 function sanitizeName(value) {
@@ -88,12 +90,16 @@ function isVideoFilename(name) {
 
 function extractEpisodeNumber(name) {
   const stem = path.posix.basename(name, path.posix.extname(name));
-  const canonicalMatch = stem.match(/(?:^|[^A-Z0-9])S\d{1,2}E(\d{1,3})(?:[^0-9]|$)/i);
+  const canonicalMatch = stem.match(
+    /(?:^|[^A-Z0-9])S\d{1,2}E(\d{1,3})(?:[^0-9]|$)/i,
+  );
   if (canonicalMatch) {
     return Number(canonicalMatch[1]);
   }
 
-  const trailingMatch = stem.match(/(?:^|[^\d])(\d{1,3})(?=(?:\s*\[[^\]]*\])?$)/);
+  const trailingMatch = stem.match(
+    /(?:^|[^\d])(\d{1,3})(?=(?:\s*\[[^\]]*\])?$)/,
+  );
   if (trailingMatch) {
     return Number(trailingMatch[1]);
   }
@@ -132,7 +138,9 @@ async function resolveSingleMovieSource(src) {
       throw new ExecutorInputError(`No video files in directory: ${src}`);
     }
     if (files.length !== 1) {
-      throw new ExecutorInputError(`Multiple video files in directory, pass exact file path: ${src}`);
+      throw new ExecutorInputError(
+        `Multiple video files in directory, pass exact file path: ${src}`,
+      );
     }
     return files[0];
   }
@@ -225,7 +233,11 @@ export function createExecutor({ roots: rootOverrides = {} } = {}) {
           stderr: "",
         };
       } catch (error) {
-        return { code: errorCode(error), stdout: "", stderr: formatExecutorError(error) };
+        return {
+          code: errorCode(error),
+          stdout: "",
+          stderr: formatExecutorError(error),
+        };
       }
     },
 
@@ -248,7 +260,9 @@ export function createExecutor({ roots: rootOverrides = {} } = {}) {
         const showDir = path.posix.join(roots.tv, `${safeTitle} (${year})`);
         const dstDir = path.posix.join(showDir, `Season ${paddedSeason}`);
         const shouldResetTarget = resetTarget === true;
-        const cleanedCount = shouldResetTarget ? await clearDirectoryContents(dstDir) : 0;
+        const cleanedCount = shouldResetTarget
+          ? await clearDirectoryContents(dstDir)
+          : 0;
         await fsp.mkdir(dstDir, { recursive: true });
 
         const existingEntries = [];
@@ -262,7 +276,10 @@ export function createExecutor({ roots: rootOverrides = {} } = {}) {
               const stat = await fsp.stat(entryPath);
               if (!stat.isFile()) continue;
               const episodeNumber = extractEpisodeNumber(name);
-              if (Number.isInteger(episodeNumber) && episodeNumber > highestEpisode) {
+              if (
+                Number.isInteger(episodeNumber) &&
+                episodeNumber > highestEpisode
+              ) {
                 highestEpisode = episodeNumber;
               }
               existingEntries.push({
@@ -276,7 +293,9 @@ export function createExecutor({ roots: rootOverrides = {} } = {}) {
           }
         }
 
-        let nextEpisode = shouldResetTarget ? 1 : Math.max(highestEpisode, existingEntries.length) + 1;
+        let nextEpisode = shouldResetTarget
+          ? 1
+          : Math.max(highestEpisode, existingEntries.length) + 1;
 
         const lines = [];
         if (shouldResetTarget) {
@@ -287,7 +306,9 @@ export function createExecutor({ roots: rootOverrides = {} } = {}) {
         let skippedCount = 0;
         for (const src of files) {
           const srcStat = await fsp.stat(src);
-          const existingLink = existingEntries.find((entry) => entry.dev === srcStat.dev && entry.ino === srcStat.ino);
+          const existingLink = existingEntries.find(
+            (entry) => entry.dev === srcStat.dev && entry.ino === srcStat.ino,
+          );
           if (existingLink) {
             skippedCount += 1;
             lines.push(`  = ${existingLink.path} (already linked)`);
@@ -297,14 +318,23 @@ export function createExecutor({ roots: rootOverrides = {} } = {}) {
           const ext = path.posix.extname(src);
           let dst = "";
           while (true) {
-            const candidateName = buildSeasonEpisodeName(paddedSeason, nextEpisode, ext);
+            const candidateName = buildSeasonEpisodeName(
+              paddedSeason,
+              nextEpisode,
+              ext,
+            );
             dst = path.posix.join(dstDir, candidateName);
             try {
               const existing = await fsp.stat(dst);
               if (!existing.isFile()) {
-                throw new ExecutorInputError(`Destination exists and is not a file: ${dst}`);
+                throw new ExecutorInputError(
+                  `Destination exists and is not a file: ${dst}`,
+                );
               }
-              if (existing.dev === srcStat.dev && existing.ino === srcStat.ino) {
+              if (
+                existing.dev === srcStat.dev &&
+                existing.ino === srcStat.ino
+              ) {
                 skippedCount += 1;
                 lines.push(`  = ${dst} (already linked)`);
                 break;
@@ -342,7 +372,11 @@ export function createExecutor({ roots: rootOverrides = {} } = {}) {
           stderr: "",
         };
       } catch (error) {
-        return { code: errorCode(error), stdout: "", stderr: formatExecutorError(error) };
+        return {
+          code: errorCode(error),
+          stdout: "",
+          stderr: formatExecutorError(error),
+        };
       }
     },
 
@@ -359,7 +393,9 @@ export function createExecutor({ roots: rootOverrides = {} } = {}) {
         }
 
         const names = await fsp.readdir(dir);
-        const paths = sortByPathByteOrder(names.map((name) => path.posix.join(dir, name)));
+        const paths = sortByPathByteOrder(
+          names.map((name) => path.posix.join(dir, name)),
+        );
         const items = [];
 
         for (const entryPath of paths) {
@@ -386,7 +422,11 @@ export function createExecutor({ roots: rootOverrides = {} } = {}) {
 
         return { ok: true, code: 0, items };
       } catch (error) {
-        return { ok: false, code: errorCode(error), stderr: formatExecutorError(error) };
+        return {
+          ok: false,
+          code: errorCode(error),
+          stderr: formatExecutorError(error),
+        };
       }
     },
   };
