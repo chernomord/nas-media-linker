@@ -68,6 +68,7 @@ function makeSavedTemplatesStore(seedItems = []) {
         title: input.title,
         year: Number(input.year),
         season: input.season == null ? null : Number(input.season),
+        sourceId: input.sourceId ?? null,
         srcPath: input.srcPath ?? null,
         createdAt: "2026-03-27T00:00:00.000Z",
         updatedAt: "2026-03-27T00:00:00.000Z",
@@ -599,7 +600,14 @@ test("list endpoint returns frozen success shape", async () => {
         return {
           ok: true,
           code: 0,
-          items: [{ type: "d", name: "Show", size: "-", mtime: "2026-03-27 10:00:00.000000000 +0300" }],
+          items: [{
+            uid: "100:200",
+            path: `${TORRENTS_ROOT}/Show`,
+            type: "d",
+            name: "Show",
+            size: "-",
+            mtime: "2026-03-27 10:00:00.000000000 +0300",
+          }],
         };
       },
     },
@@ -619,7 +627,14 @@ test("list endpoint returns frozen success shape", async () => {
     assert.deepEqual(await resp.json(), {
       ok: true,
       dir: TORRENTS_ROOT,
-      items: [{ type: "d", name: "Show", size: "-", mtime: "2026-03-27 10:00:00.000000000 +0300" }],
+      items: [{
+        uid: "100:200",
+        path: `${TORRENTS_ROOT}/Show`,
+        type: "d",
+        name: "Show",
+        size: "-",
+        mtime: "2026-03-27 10:00:00.000000000 +0300",
+      }],
     });
   });
 });
@@ -1528,6 +1543,7 @@ test("saved template routes return frozen list/upsert/delete shapes", async () =
       title: "Matrix",
       year: 1999,
       season: null,
+      sourceId: "uid-matrix",
       srcPath: `${TORRENTS_ROOT}/Matrix`,
       createdAt: "2026-03-27T00:00:00.000Z",
       updatedAt: "2026-03-27T00:00:00.000Z",
@@ -1563,6 +1579,7 @@ test("saved template routes return frozen list/upsert/delete shapes", async () =
         kind: "movie",
         title: "Alien",
         year: "1979",
+        sourceId: "uid-alien",
         srcPath: `${TORRENTS_ROOT}/Alien`,
       }),
     });
@@ -1598,6 +1615,7 @@ test("saved template routes ignore unexpected extra fields", async () => {
         title: input.title,
         year: Number(input.year),
         season: input.season == null ? null : Number(input.season),
+        sourceId: input.sourceId ?? null,
         srcPath: input.srcPath ?? null,
         createdAt: "2026-03-27T00:00:00.000Z",
         updatedAt: "2026-03-27T00:00:00.000Z",
@@ -1630,6 +1648,7 @@ test("saved template routes ignore unexpected extra fields", async () => {
         kind: "movie",
         title: "Alien",
         year: "1979",
+        sourceId: "uid-alien",
         srcPath: `${TORRENTS_ROOT}/Alien`,
         runToken: "runtime-secret",
         plexDiscoverToken: "plex-secret",
@@ -1647,6 +1666,7 @@ test("saved template routes ignore unexpected extra fields", async () => {
       "id",
       "kind",
       "season",
+      "sourceId",
       "srcPath",
       "title",
       "updatedAt",
@@ -1667,6 +1687,7 @@ test("saved template routes ignore unexpected extra fields", async () => {
       "id",
       "kind",
       "season",
+      "sourceId",
       "srcPath",
       "title",
       "updatedAt",

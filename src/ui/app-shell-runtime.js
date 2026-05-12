@@ -1,5 +1,11 @@
 import { onLocaleChange, t } from "./i18n/index.js";
 import { parseSeasonLinkSummary } from "./season-link-summary.mjs";
+import {
+  createTorrentSourceIndex,
+  resolveSavedTorrentSourceUid,
+  resolveTorrentSourcePathFromUid,
+  resolveTorrentSourceUidFromPath,
+} from "./torrent-source-selection.mjs";
 
 function onReady(callback) {
   if (document.readyState === "loading") {
@@ -318,6 +324,11 @@ function initAppShell() {
   let torrentSourceItems = [];
   let torrentSourceLoaded = false;
   let torrentSourceError = "";
+  let torrentSourceIndex = createTorrentSourceIndex(ROOT_PATHS.torrents, []);
+  let pendingTorrentSourceSelection = {
+    movie: "",
+    season: "",
+  };
 
   function renderLog() {
     $("log").textContent = logText;
@@ -595,6 +606,50 @@ function initAppShell() {
     return `${ROOT_PATHS.torrents}/${itemName}`;
   }
 
+  function torrentSourceSelectionFromPath(srcPath) {
+    return resolveTorrentSourceUidFromPath(srcPath, torrentSourceIndex);
+  }
+
+  function selectHasOption(select, value) {
+    if (!select || !value) return false;
+    return Array.from(select.querySelectorAll("sl-option")).some((option) => option.value === value);
+  }
+
+  function applyTorrentSourceUid(kind, candidateUid) {
+    const select = kind === "movie" ? $("m_src") : $("s_src");
+    if (!select) {
+      return "";
+    }
+
+    const pendingValue = pendingTorrentSourceSelection[kind] || "";
+    const nextCandidate = candidateUid || pendingValue || select.value || "";
+    if (nextCandidate && (!torrentSourceLoaded || selectHasOption(select, nextCandidate))) {
+      select.value = nextCandidate;
+      pendingTorrentSourceSelection[kind] = nextCandidate;
+      return nextCandidate;
+    }
+
+    if (torrentSourceLoaded && !torrentSourceError) {
+      select.value = "";
+      pendingTorrentSourceSelection[kind] = "";
+    }
+    return "";
+  }
+
+  function queueTorrentSourceSelection(kind, srcPath) {
+    pendingTorrentSourceSelection[kind] = torrentSourceSelectionFromPath(srcPath);
+    return applyTorrentSourceUid(kind, pendingTorrentSourceSelection[kind]);
+  }
+
+  function selectedTorrentSourcePath(kind) {
+    const select = kind === "movie" ? $("m_src") : $("s_src");
+    const uid = String(select?.value ?? "").trim();
+    if (!uid) {
+      return "";
+    }
+    return resolveTorrentSourcePathFromUid(uid, torrentSourceIndex);
+  }
+
   function clearElementChildren(el) {
     while (el.firstChild) {
       el.removeChild(el.firstChild);
@@ -623,24 +678,23 @@ function initAppShell() {
       return;
     }
 
-    const movieValue = movieSelect.value || "";
-    const seasonValue = seasonSelect.value || "";
-    const movieItems = torrentSourceItems.filter(isTorrentSourceEntrySelectableForMovie);
-    const seasonItems = torrentSourceItems.filter(isTorrentSourceEntrySelectableForSeason);
+    torrentSourceIndex = createTorrentSourceIndex(ROOT_PATHS.torrents, torrentSourceItems);
+    const movieItems = torrentSourceIndex.entries.filter(isTorrentSourceEntrySelectableForMovie);
+    const seasonItems = torrentSourceIndex.entries.filter(isTorrentSourceEntrySelectableForSeason);
 
     clearElementChildren(movieSelect);
     clearElementChildren(seasonSelect);
 
     for (const item of movieItems) {
       const option = document.createElement("sl-option");
-      option.value = torrentSourcePath(item.name);
+      option.value = item.uid;
       option.textContent = item.name;
       movieSelect.appendChild(option);
     }
 
     for (const item of seasonItems) {
       const option = document.createElement("sl-option");
-      option.value = torrentSourcePath(item.name);
+      option.value = item.uid;
       option.textContent = item.name;
       seasonSelect.appendChild(option);
     }
@@ -659,8 +713,8 @@ function initAppShell() {
     movieSelect.disabled = !torrentSourceLoaded || Boolean(torrentSourceError) || movieItems.length === 0;
     seasonSelect.disabled = !torrentSourceLoaded || Boolean(torrentSourceError) || seasonItems.length === 0;
 
-    movieSelect.value = movieItems.some((item) => torrentSourcePath(item.name) === movieValue) ? movieValue : "";
-    seasonSelect.value = seasonItems.some((item) => torrentSourcePath(item.name) === seasonValue) ? seasonValue : "";
+    applyTorrentSourceUid("movie", pendingTorrentSourceSelection.movie || movieSelect.value || "");
+    applyTorrentSourceUid("season", pendingTorrentSourceSelection.season || seasonSelect.value || "");
 
     syncRunButtons();
   }
@@ -718,6 +772,7 @@ function initAppShell() {
       type: item.kind,
       src: item.kind === "movie" ? (item.srcPath || "") : "",
       srcDir: item.kind === "season" ? (item.srcPath || "") : "",
+      sourceId: item.sourceId || "",
       title: item.title,
       season: item.season != null ? String(item.season) : "",
       year: item.year != null ? String(item.year) : "",
@@ -732,6 +787,7 @@ function initAppShell() {
       title: entry.title,
       year: entry.year,
       season: entry.type === "season" ? entry.season : undefined,
+      sourceId: entry.sourceId,
       srcPath: entry.type === "movie" ? entry.src : entry.srcDir,
     };
   }
@@ -827,7 +883,8 @@ function initAppShell() {
   function movieEntryFromForm() {
     return {
       type: "movie",
-      src: inputValue("m_src"),
+      src: selectedTorrentSourcePath("movie"),
+      sourceId: String($("m_src")?.value ?? "").trim(),
       title: inputValue("m_title"),
       year: inputValue("m_year"),
     };
@@ -836,7 +893,8 @@ function initAppShell() {
   function seasonEntryFromForm() {
     return {
       type: "season",
-      srcDir: inputValue("s_src"),
+      srcDir: selectedTorrentSourcePath("season"),
+      sourceId: String($("s_src")?.value ?? "").trim(),
       title: inputValue("s_title"),
       season: inputValue("s_season"),
       year: inputValue("s_year"),
@@ -845,7 +903,7 @@ function initAppShell() {
 
   function movieFormData() {
     return {
-      src: inputValue("m_src"),
+      src: selectedTorrentSourcePath("movie"),
       title: inputValue("m_title"),
       year: inputValue("m_year"),
     };
@@ -853,7 +911,7 @@ function initAppShell() {
 
   function seasonFormData() {
     return {
-      srcDir: inputValue("s_src"),
+      srcDir: selectedTorrentSourcePath("season"),
       title: inputValue("s_title"),
       season: inputValue("s_season"),
       year: inputValue("s_year"),
@@ -990,14 +1048,16 @@ function initAppShell() {
       fillIcon.className = "text-blue-600";
       fillBtn.appendChild(fillIcon);
       const savedSource = it.type === "movie" ? it.src : it.srcDir;
-      const canFill = isPathUnderTorrents(savedSource);
+      const savedSourceUid = resolveSavedTorrentSourceUid(it, torrentSourceIndex);
+      const canFill = Boolean(savedSourceUid) || (torrentSourceLoaded && isPathUnderTorrents(savedSource));
       fillBtn.disabled = !canFill;
       fillBtn.onclick = () => {
         if (!canFill) {
           return;
         }
         if (it.type === "movie") {
-          $("m_src").value = it.src || "";
+          const selection = savedSourceUid || queueTorrentSourceSelection("movie", it.src || "");
+          applyTorrentSourceUid("movie", selection);
           $("m_title").value = it.title;
           $("m_year").value = it.year;
           flashField("m_src");
@@ -1005,7 +1065,8 @@ function initAppShell() {
           flashField("m_year");
           showPreviewFromFields("movie");
         } else {
-          $("s_src").value = it.srcDir || "";
+          const selection = savedSourceUid || queueTorrentSourceSelection("season", it.srcDir || "");
+          applyTorrentSourceUid("season", selection);
           $("s_title").value = it.title;
           $("s_season").value = it.season;
           $("s_year").value = it.year;
@@ -1092,15 +1153,15 @@ function initAppShell() {
           return;
         }
         if (it.type === "d") {
-          $("m_src").value = `${root}/${it.name}`;
-          $("s_src").value = `${root}/${it.name}`;
+          queueTorrentSourceSelection("movie", `${root}/${it.name}`);
+          queueTorrentSourceSelection("season", `${root}/${it.name}`);
           $("s_reset_target").checked = false;
           flashField("m_src");
           flashField("s_src");
           syncRunButtons();
           return;
         }
-        $("m_src").value = `${root}/${it.name}`;
+        queueTorrentSourceSelection("movie", `${root}/${it.name}`);
         flashField("m_src");
         syncRunButtons();
       };
@@ -1148,6 +1209,7 @@ function initAppShell() {
       torrentSourceError = t("status.session_expired");
       torrentSourceLoaded = true;
       renderTorrentSourceOptions();
+      renderSaved();
       return result;
     }
     if (!result.ok) {
@@ -1155,6 +1217,7 @@ function initAppShell() {
       torrentSourceError = result.data?.stderr || result.data?.error || `HTTP ${result.status}`;
       torrentSourceLoaded = true;
       renderTorrentSourceOptions();
+      renderSaved();
       return result;
     }
 
@@ -1162,6 +1225,7 @@ function initAppShell() {
     torrentSourceError = "";
     torrentSourceLoaded = true;
     renderTorrentSourceOptions();
+    renderSaved();
     return result;
   }
 
@@ -1440,8 +1504,9 @@ function initAppShell() {
     const entry = shouldSave ? movieEntryFromForm() : null;
     setLinkStatus("m_status", "info", t("status.running"));
     try {
+      const src = selectedTorrentSourcePath("movie");
       const result = await post("/api/link/movie", {
-        src: $("m_src").value,
+        src,
         title: $("m_title").value,
         year: $("m_year").value,
       });
@@ -1482,8 +1547,9 @@ function initAppShell() {
     const entry = shouldSave ? seasonEntryFromForm() : null;
     setLinkStatus("s_status", "info", t("status.running"));
     try {
+      const srcDir = selectedTorrentSourcePath("season");
       const result = await post("/api/link/season", {
-        srcDir: $("s_src").value,
+        srcDir,
         title: $("s_title").value,
         season: $("s_season").value,
         year: $("s_year").value,
@@ -1603,8 +1669,8 @@ function initAppShell() {
   }, true);
 
   onLocaleChange(() => {
-    renderSaved();
     renderTorrentSourceOptions();
+    renderSaved();
     if (listedItems.length > 0) {
       renderBrowseList(listedRoot, listedItems);
     }

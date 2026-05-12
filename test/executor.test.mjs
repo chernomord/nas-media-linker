@@ -46,6 +46,10 @@ test("listDir returns sorted items with stable shape", async () => {
       result.items.map((item) => item.type),
       ["d", "f"],
     );
+    assert.match(result.items[0].uid, /^\d+:\d+$/);
+    assert.equal(result.items[0].path, path.join(fixture.roots.torrents, "Alpha"));
+    assert.match(result.items[1].uid, /^\d+:\d+$/);
+    assert.equal(result.items[1].path, path.join(fixture.roots.torrents, "beta.mkv"));
     assert.equal(result.items[0].size, "-");
     assert.match(result.items[0].mtime, /^\d{4}-\d{2}-\d{2} /);
     assert.equal(result.items[1].size, "5");

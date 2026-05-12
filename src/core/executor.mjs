@@ -67,6 +67,13 @@ function formatStatTime(stat) {
   ].join(" ");
 }
 
+function entryUid(entryPath, stat) {
+  if (stat && Number.isInteger(stat.dev) && Number.isInteger(stat.ino)) {
+    return `${stat.dev}:${stat.ino}`;
+  }
+  return entryPath;
+}
+
 export function isUnder(value, root) {
   if (typeof value !== "string") return false;
   if (/(^|\/)\.\.(\/|$)/.test(value)) return false;
@@ -402,17 +409,21 @@ export function createExecutor({ roots: rootOverrides = {} } = {}) {
           let type = "f";
           let size = "-";
           let mtime = "-";
+          let uid = entryPath;
 
           try {
             const stat = await fsp.stat(entryPath);
             type = stat.isDirectory() ? "d" : "f";
             size = stat.isDirectory() ? "-" : String(stat.size);
             mtime = formatStatTime(stat);
+            uid = entryUid(entryPath, stat);
           } catch {
             // Keep listing stable even if stat fails for a single entry.
           }
 
           items.push({
+            uid,
+            path: entryPath,
             type,
             name: path.posix.basename(entryPath),
             size,

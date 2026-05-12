@@ -64,20 +64,20 @@ test("browse list keeps long names truncated inside the card", async ({ page }) 
   await expect(row.locator("sl-button").last()).toBeVisible();
 });
 
-test("browse file rows can fill the movie source field", async ({ page }) => {
+test("browse torrents file rows can fill the movie source uid", async ({ page }) => {
   await page.goto("/");
 
-  await setShoelaceValue(page, "#root", "movies");
+  await setShoelaceValue(page, "#root", "torrents");
   await page.locator("#browse").click();
 
-  const fileName = "Standalone.Movie.2024.1080p.WEB-DL.H.265.mkv";
+  const fileName = "Taboo.Gohatto.1999.1080p.WEB-DL.mkv";
   const row = page.locator("#list li").filter({ hasText: fileName }).first();
   await expect(row).toBeVisible();
 
   await expect(row.locator("sl-button")).toHaveCount(2);
   await row.locator("sl-button").last().click();
 
-  await expect(page.locator("#m_src")).toHaveValue(new RegExp(`${fileName.replaceAll(".", "\\.")}$`));
+  await expect(page.locator("#m_src")).toHaveValue(/^\d+:\d+$/);
   await expect(page.locator("#s_src")).toHaveValue("");
 });
 

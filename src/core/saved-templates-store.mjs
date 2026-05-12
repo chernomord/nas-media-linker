@@ -30,6 +30,12 @@ function normalizeSrcPath(value) {
   return srcPath === "" ? null : srcPath;
 }
 
+function normalizeSourceId(value) {
+  if (value == null) return null;
+  const sourceId = String(value).trim();
+  return sourceId === "" ? null : sourceId;
+}
+
 function normalizeTitle(value) {
   const title = String(value ?? "").trim();
   return title === "" ? null : title;
@@ -58,12 +64,14 @@ function normalizeInput(input) {
   }
 
   const srcPath = normalizeSrcPath(input?.srcPath);
+  const sourceId = normalizeSourceId(input?.sourceId);
   return {
     kind,
     title,
     year,
     season,
     srcPath,
+    sourceId,
   };
 }
 
@@ -75,6 +83,7 @@ function rowToItem(row) {
     year: row.year,
     season: row.season,
     srcPath: row.src_path,
+    sourceId: row.source_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -93,6 +102,7 @@ export function createSavedTemplatesStore({ dbPath }) {
       title TEXT NOT NULL,
       year INTEGER NOT NULL,
       season INTEGER NULL,
+      source_id TEXT NULL,
       src_path TEXT NULL,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
@@ -101,29 +111,42 @@ export function createSavedTemplatesStore({ dbPath }) {
       ON saved_templates(updated_at DESC, created_at DESC);
   `);
 
+  const savedTemplateColumns = new Set(
+    db.prepare(`PRAGMA table_info(saved_templates)`).all().map((row) => row.name),
+  );
+  if (!savedTemplateColumns.has("source_id")) {
+    try {
+      db.exec(`ALTER TABLE saved_templates ADD COLUMN source_id TEXT NULL;`);
+    } catch (error) {
+      if (!String(error?.message ?? "").includes("duplicate column name: source_id")) {
+        throw error;
+      }
+    }
+  }
+
   const listStmt = db.prepare(`
-    SELECT id, kind, title, year, season, src_path, created_at, updated_at
+    SELECT id, kind, title, year, season, source_id, src_path, created_at, updated_at
     FROM saved_templates
     ORDER BY updated_at DESC, created_at DESC, title ASC
   `);
   const getByNaturalKeyStmt = db.prepare(`
-    SELECT id, kind, title, year, season, src_path, created_at, updated_at
+    SELECT id, kind, title, year, season, source_id, src_path, created_at, updated_at
     FROM saved_templates
     WHERE natural_key = ?
   `);
   const getByIdStmt = db.prepare(`
-    SELECT id, kind, title, year, season, src_path, created_at, updated_at
+    SELECT id, kind, title, year, season, source_id, src_path, created_at, updated_at
     FROM saved_templates
     WHERE id = ?
   `);
   const insertStmt = db.prepare(`
     INSERT INTO saved_templates (
-      id, natural_key, kind, title, year, season, src_path, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      id, natural_key, kind, title, year, season, source_id, src_path, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const updateStmt = db.prepare(`
     UPDATE saved_templates
-    SET src_path = ?, updated_at = ?
+    SET source_id = COALESCE(?, source_id), src_path = ?, updated_at = ?
     WHERE natural_key = ?
   `);
   const deleteStmt = db.prepare(`
@@ -143,7 +166,7 @@ export function createSavedTemplatesStore({ dbPath }) {
       const timestamp = nowIso();
 
       if (existing) {
-        updateStmt.run(normalized.srcPath, timestamp, naturalKey);
+        updateStmt.run(normalized.sourceId, normalized.srcPath, timestamp, naturalKey);
         return rowToItem(getByNaturalKeyStmt.get(naturalKey));
       }
 
@@ -158,6 +181,7 @@ export function createSavedTemplatesStore({ dbPath }) {
         normalized.title,
         normalized.year,
         normalized.season,
+        normalized.sourceId,
         normalized.srcPath,
         timestamp,
         timestamp,

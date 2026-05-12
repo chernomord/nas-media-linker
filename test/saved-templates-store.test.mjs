@@ -24,6 +24,7 @@ test("saved template upsert uses natural key and updates srcPath", async () => {
       title: "Frieren",
       year: "2023",
       season: "1",
+      sourceId: "uid-1",
       srcPath: "/volume1/Movies/Torrents/Frieren",
     });
 
@@ -34,6 +35,7 @@ test("saved template upsert uses natural key and updates srcPath", async () => {
       title: "Frieren",
       year: "2023",
       season: "1",
+      sourceId: "uid-2",
       srcPath: "/volume1/Movies/Torrents/Frieren-v2",
     });
 
@@ -41,6 +43,7 @@ test("saved template upsert uses natural key and updates srcPath", async () => {
     assert.equal(items.length, 1);
     assert.equal(second.id, first.id);
     assert.equal(second.createdAt, first.createdAt);
+    assert.equal(second.sourceId, "uid-2");
     assert.equal(second.srcPath, "/volume1/Movies/Torrents/Frieren-v2");
     assert.notEqual(second.updatedAt, first.updatedAt);
   } finally {
@@ -55,6 +58,7 @@ test("saved template store keeps distinct identities for movie and season", asyn
       kind: "movie",
       title: "Dune",
       year: "2024",
+      sourceId: "uid-movie",
       srcPath: "/volume1/Movies/Torrents/Dune",
     });
     fixture.store.upsert({
@@ -62,6 +66,7 @@ test("saved template store keeps distinct identities for movie and season", asyn
       title: "Dune",
       year: "2024",
       season: "1",
+      sourceId: "uid-season",
       srcPath: "/volume1/Movies/Torrents/Dune-Series",
     });
 
@@ -83,6 +88,7 @@ test("saved template delete removes the record", async () => {
       kind: "movie",
       title: "Matrix",
       year: "1999",
+      sourceId: "uid-matrix",
       srcPath: "/volume1/Movies/Torrents/Matrix",
     });
 
@@ -100,6 +106,7 @@ test("saved template store ignores extra secret-like fields", async () => {
       kind: "movie",
       title: "Matrix",
       year: "1999",
+      sourceId: "uid-matrix",
       srcPath: "/volume1/Movies/Torrents/Matrix",
       runToken: "runtime-secret",
       plexDiscoverToken: "plex-secret",
@@ -112,6 +119,7 @@ test("saved template store ignores extra secret-like fields", async () => {
       "id",
       "kind",
       "season",
+      "sourceId",
       "srcPath",
       "title",
       "updatedAt",
