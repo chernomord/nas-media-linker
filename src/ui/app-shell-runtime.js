@@ -315,6 +315,9 @@ function initAppShell() {
   let listedRoot = "";
   let listedItems = [];
   let listErrorText = "";
+  let torrentSourceItems = [];
+  let torrentSourceLoaded = false;
+  let torrentSourceError = "";
 
   function renderLog() {
     $("log").textContent = logText;
@@ -586,6 +589,80 @@ function initAppShell() {
       clearTimeout(t);
       t = setTimeout(() => fn(...args), delayMs);
     };
+  }
+
+  function torrentSourcePath(itemName) {
+    return `${ROOT_PATHS.torrents}/${itemName}`;
+  }
+
+  function clearElementChildren(el) {
+    while (el.firstChild) {
+      el.removeChild(el.firstChild);
+    }
+  }
+
+  function isTorrentSourceEntrySelectableForMovie(item) {
+    return item?.type === "d" || item?.type === "f";
+  }
+
+  function isTorrentSourceEntrySelectableForSeason(item) {
+    return item?.type === "d";
+  }
+
+  function isPathUnderTorrents(value) {
+    if (typeof value !== "string" || !value) {
+      return false;
+    }
+    return value === ROOT_PATHS.torrents || value.startsWith(`${ROOT_PATHS.torrents}/`);
+  }
+
+  function renderTorrentSourceOptions() {
+    const movieSelect = $("m_src");
+    const seasonSelect = $("s_src");
+    if (!movieSelect || !seasonSelect) {
+      return;
+    }
+
+    const movieValue = movieSelect.value || "";
+    const seasonValue = seasonSelect.value || "";
+    const movieItems = torrentSourceItems.filter(isTorrentSourceEntrySelectableForMovie);
+    const seasonItems = torrentSourceItems.filter(isTorrentSourceEntrySelectableForSeason);
+
+    clearElementChildren(movieSelect);
+    clearElementChildren(seasonSelect);
+
+    for (const item of movieItems) {
+      const option = document.createElement("sl-option");
+      option.value = torrentSourcePath(item.name);
+      option.textContent = item.name;
+      movieSelect.appendChild(option);
+    }
+
+    for (const item of seasonItems) {
+      const option = document.createElement("sl-option");
+      option.value = torrentSourcePath(item.name);
+      option.textContent = item.name;
+      seasonSelect.appendChild(option);
+    }
+
+    movieSelect.setAttribute("placeholder", torrentSourceError
+      ? t("source.unavailable")
+      : torrentSourceLoaded
+        ? (movieItems.length > 0 ? t("movie.source_placeholder") : t("source.empty"))
+        : t("source.loading"));
+    seasonSelect.setAttribute("placeholder", torrentSourceError
+      ? t("source.unavailable")
+      : torrentSourceLoaded
+        ? (seasonItems.length > 0 ? t("season.source_placeholder") : t("source.empty"))
+        : t("source.loading"));
+
+    movieSelect.disabled = !torrentSourceLoaded || Boolean(torrentSourceError) || movieItems.length === 0;
+    seasonSelect.disabled = !torrentSourceLoaded || Boolean(torrentSourceError) || seasonItems.length === 0;
+
+    movieSelect.value = movieItems.some((item) => torrentSourcePath(item.name) === movieValue) ? movieValue : "";
+    seasonSelect.value = seasonItems.some((item) => torrentSourcePath(item.name) === seasonValue) ? seasonValue : "";
+
+    syncRunButtons();
   }
 
   const debouncedMoviePreview = debounce(async () => {
@@ -912,7 +989,13 @@ function initAppShell() {
       fillIcon.setAttribute("name", "box-arrow-in-right");
       fillIcon.className = "text-blue-600";
       fillBtn.appendChild(fillIcon);
+      const savedSource = it.type === "movie" ? it.src : it.srcDir;
+      const canFill = isPathUnderTorrents(savedSource);
+      fillBtn.disabled = !canFill;
       fillBtn.onclick = () => {
+        if (!canFill) {
+          return;
+        }
         if (it.type === "movie") {
           $("m_src").value = it.src || "";
           $("m_title").value = it.title;
@@ -936,7 +1019,10 @@ function initAppShell() {
         syncRunButtons();
       };
       actions.appendChild(fillBtn);
-      bindFloatingTooltip(fillBtn, t("saved.fill_form"));
+      bindFloatingTooltip(
+        fillBtn,
+        canFill ? t("saved.fill_form") : t("browse.fill_inputs_torrents_only"),
+      );
 
       const delBtn = document.createElement("sl-button");
       delBtn.setAttribute("size", "small");
@@ -995,8 +1081,16 @@ function initAppShell() {
           }
         }
       };
-      bindFloatingTooltip(fillBtn, t("browse.fill_inputs"));
+      const canFillFromBrowse = root === ROOT_PATHS.torrents;
+      fillBtn.disabled = !canFillFromBrowse;
+      bindFloatingTooltip(
+        fillBtn,
+        canFillFromBrowse ? t("browse.fill_inputs") : t("browse.fill_inputs_torrents_only"),
+      );
       fillBtn.onclick = () => {
+        if (!canFillFromBrowse) {
+          return;
+        }
         if (it.type === "d") {
           $("m_src").value = `${root}/${it.name}`;
           $("s_src").value = `${root}/${it.name}`;
@@ -1041,6 +1135,34 @@ function initAppShell() {
       method: "POST",
       body,
     });
+  }
+
+  async function loadTorrentSourceItems() {
+    torrentSourceLoaded = false;
+    torrentSourceError = "";
+    renderTorrentSourceOptions();
+
+    const result = await postJson("/api/list", { dir: ROOT_PATHS.torrents });
+    if (isSessionExpiredResult(result)) {
+      torrentSourceItems = [];
+      torrentSourceError = t("status.session_expired");
+      torrentSourceLoaded = true;
+      renderTorrentSourceOptions();
+      return result;
+    }
+    if (!result.ok) {
+      torrentSourceItems = [];
+      torrentSourceError = result.data?.stderr || result.data?.error || `HTTP ${result.status}`;
+      torrentSourceLoaded = true;
+      renderTorrentSourceOptions();
+      return result;
+    }
+
+    torrentSourceItems = Array.isArray(result.data?.items) ? result.data.items : [];
+    torrentSourceError = "";
+    torrentSourceLoaded = true;
+    renderTorrentSourceOptions();
+    return result;
   }
 
   const AUTOCOMPLETE_PORTAL_ID = "autocomplete_portal";
@@ -1482,6 +1604,7 @@ function initAppShell() {
 
   onLocaleChange(() => {
     renderSaved();
+    renderTorrentSourceOptions();
     if (listedItems.length > 0) {
       renderBrowseList(listedRoot, listedItems);
     }
@@ -1498,6 +1621,7 @@ function initAppShell() {
   renderSaved();
   syncRunButtons();
   $("root").value = "torrents";
+  loadTorrentSourceItems();
 
   function closeDeleteDialog() {
     pendingDeleteId = null;

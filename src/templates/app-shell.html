@@ -43,7 +43,7 @@
               <p class="section-subheader" data-i18n="season.subtitle">Create a season structure for a show.</p>
               <div class="mt-5 grid gap-3">
                 <div class="text-xs uppercase tracking-[0.2em] text-slate-500" data-i18n="season.source_label">Source folder</div>
-                <sl-input id="s_src" class="w-full" size="small" placeholder="__TORRENTS_ROOT__/Show Folder" data-i18n-placeholder="season.source_placeholder"></sl-input>
+                <sl-select id="s_src" class="w-full" size="small" placeholder="Choose a folder from Torrents" data-i18n-placeholder="season.source_placeholder" disabled></sl-select>
                 <div class="grid gap-3 md:grid-cols-[1fr_100px_120px]">
                   <div class="relative" data-autocomplete-anchor="s_ac">
                     <sl-input id="s_title" size="small" placeholder="Show title" data-i18n-placeholder="season.title_placeholder"></sl-input>
@@ -69,8 +69,8 @@
               <h2 class="text-lg font-semibold text-slate-900" data-i18n="movie.title">Movie link</h2>
               <p class="section-subheader" data-i18n="movie.subtitle">Link a single movie file into the library.</p>
               <div class="mt-5 grid gap-3">
-                <div class="text-xs uppercase tracking-[0.2em] text-slate-500" data-i18n="movie.source_label">Source path</div>
-                <sl-input id="m_src" class="w-full" size="small" placeholder="__TORRENTS_ROOT__/Movies/...file.mkv" data-i18n-placeholder="movie.source_placeholder"></sl-input>
+                <div class="text-xs uppercase tracking-[0.2em] text-slate-500" data-i18n="movie.source_label">Source item</div>
+                <sl-select id="m_src" class="w-full" size="small" placeholder="Choose an item from Torrents" data-i18n-placeholder="movie.source_placeholder" disabled></sl-select>
                 <div class="grid gap-3 md:grid-cols-[1fr_120px]">
                   <div class="relative" data-autocomplete-anchor="m_ac">
                     <sl-input id="m_title" size="small" placeholder="Title" data-i18n-placeholder="movie.title_placeholder"></sl-input>
