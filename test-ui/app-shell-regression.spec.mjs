@@ -84,6 +84,45 @@ test("browse torrents file rows can fill the movie source uid", async ({ page })
   expect(seasonSourceValue).toBe("");
 });
 
+test("season source selection auto-scans and mirrors the reset toggle", async ({ page }) => {
+  await page.goto("/");
+
+  await page.waitForFunction(() => document.querySelectorAll("#s_src sl-option").length > 0);
+
+  const bundleValue = await page.locator("#s_src sl-option").evaluateAll((options) => {
+    const match = options.find((option) => option.textContent?.trim() === "Bundle Show");
+    return match?.value ?? "";
+  });
+  expect(bundleValue).not.toBe("");
+
+  await expect(page.locator("#season_plan_controls")).toHaveClass(/hidden/);
+  await setShoelaceValue(page, "#s_src", bundleValue);
+
+  await page.waitForFunction(() => {
+    const controls = document.getElementById("season_plan_controls");
+    const rows = document.querySelectorAll("#season_plan_rows tr");
+    return Boolean(controls && !controls.classList.contains("hidden") && rows.length > 0);
+  });
+
+  await expect(page.locator("#season_plan_scan")).toHaveText("Rescan");
+  await expect(page.locator("#season_plan_run")).toHaveText("Link batch");
+  await expect(page.locator("#season_plan_run")).toBeDisabled();
+  await expect(page.locator("#season_plan_context")).toHaveText("Fill title and year in the main form above.");
+
+  await setShoelaceValue(page, "#s_title", "Bundle Show");
+  await setShoelaceValue(page, "#s_year", "2026");
+  await expect(page.locator("#s_run")).toBeDisabled();
+  await expect(page.locator("#season_plan_run")).toBeEnabled();
+  await expect(page.locator("#season_plan_context")).toHaveText("Uses: Bundle Show · 2026");
+  await expect(page.locator("#season_plan_reset_target")).toBeVisible();
+
+  await page.locator("#s_reset_target").click();
+  expect(await page.locator("#season_plan_reset_target").evaluate((element) => element.checked)).toBe(true);
+
+  await page.locator("#season_plan_reset_target").click();
+  expect(await page.locator("#s_reset_target").evaluate((element) => element.checked)).toBe(false);
+});
+
 test("preview cards keep long titles inside the linking column", async ({ page }) => {
   await page.goto("/");
 

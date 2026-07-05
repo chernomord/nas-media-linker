@@ -12,8 +12,17 @@ const FIXTURE_ITEMS = [
   { type: "d", name: "@eaDir" },
   { type: "d", name: "A Knight of the Seven Kingdoms (Season 1) DV HDR10 WEB-DL 2160p" },
   { type: "d", name: "A.Knight.of.the.Seven.Kingdoms.S01.2160p.2026.2160p.WEB-DL.HDR.H.265.Master5" },
+  { type: "d", name: "Bundle Show" },
   { type: "d", name: "Parks.and.Recreation.S01.1080p.AMZN.WEB-DL.Rus.Eng.Subtitles.Multi.Audio.Very.Long.Release.Name" },
   { type: "f", name: "Standalone.Movie.2024.1080p.WEB-DL.H.265.mkv" },
+];
+
+const BUNDLE_SHOW_ROOT = `${TORRENTS_ROOT}/Bundle Show`;
+const BUNDLE_SHOW_ITEMS = [
+  { type: "d", name: "Bundle Show Specials" },
+  { type: "d", name: "Bundle.Show.S01.1080p.WEB-DL.H.264" },
+  { type: "d", name: "Bundle.Show.S02.1080p.WEB-DL.H.264" },
+  { type: "f", name: "Bundle.Show.readme.txt" },
 ];
 
 function makeSavedTemplatesStore() {
@@ -78,6 +87,13 @@ const executor = {
     return { code: 0, stdout: "fixture season linked", stderr: "" };
   },
   async listDir({ dir }) {
+    if (dir === BUNDLE_SHOW_ROOT) {
+      return {
+        ok: true,
+        code: 0,
+        items: BUNDLE_SHOW_ITEMS,
+      };
+    }
     if (!fixtureRoots.has(dir)) {
       return { ok: true, code: 0, items: [] };
     }

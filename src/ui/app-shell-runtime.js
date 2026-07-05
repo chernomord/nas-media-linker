@@ -332,6 +332,8 @@ function initAppShell() {
   let seasonPlan = null;
   let seasonPlanBusy = false;
   let seasonPlanError = "";
+  let seasonPlanScannedRoot = "";
+  let seasonPlanScanRequestId = 0;
   let pendingTorrentSourceSelection = {
     movie: "",
     season: "",
@@ -745,7 +747,13 @@ function initAppShell() {
     syncTorrentSourceSelectState(movieItems.length, seasonItems.length);
 
     applyTorrentSourceUid("movie", pendingTorrentSourceSelection.movie || movieSelect.value || "");
+    const previousSeasonPath = selectedTorrentSourcePath("season");
     applyTorrentSourceUid("season", pendingTorrentSourceSelection.season || seasonSelect.value || "");
+    const nextSeasonPath = selectedTorrentSourcePath("season");
+    if (nextSeasonPath && nextSeasonPath !== previousSeasonPath && nextSeasonPath !== seasonPlanScannedRoot) {
+      clearSeasonPlanForSourceChange();
+      void maybeAutoScanSeasonPlan();
+    }
 
     syncRunButtons();
   }
@@ -991,6 +999,7 @@ function initAppShell() {
     $("m_run").disabled = seasonPlanBusy || !isFormValid("movie");
     $("s_run").disabled = seasonPlanBusy || !isFormValid("season");
     syncSeasonPlanButtons();
+    renderSeasonPlanContext();
   }
 
   function showValidationError(kind) {
@@ -1026,6 +1035,33 @@ function initAppShell() {
       seasonPlanError = "";
     }
     renderSeasonPlan();
+  }
+
+  function syncSeasonResetTargetCheckboxes(checked) {
+    for (const id of ["s_reset_target", "season_plan_reset_target"]) {
+      const el = $(id);
+      if (el) {
+        el.checked = Boolean(checked);
+      }
+    }
+  }
+
+  function seasonResetTargetChecked() {
+    return isChecked("s_reset_target") || isChecked("season_plan_reset_target");
+  }
+
+  function clearSeasonPlanForSourceChange() {
+    seasonPlan = null;
+    seasonPlanError = "";
+    renderSeasonPlan();
+  }
+
+  async function maybeAutoScanSeasonPlan() {
+    const root = selectedTorrentSourcePath("season");
+    if (!root || root === seasonPlanScannedRoot) {
+      return false;
+    }
+    return scanSeasonPlan();
   }
 
   function seasonPlanHintLabel(row) {
@@ -1091,6 +1127,15 @@ function initAppShell() {
     return parts.join(" · ");
   }
 
+  function seasonPlanBatchContextText() {
+    const title = inputValue("s_title");
+    const year = inputValue("s_year");
+    if (title && year) {
+      return t("season.plan.batch_context", { title, year });
+    }
+    return t("season.plan.batch_context_empty");
+  }
+
   function seasonPlanHasRunnableRows() {
     if (!seasonPlan) {
       return false;
@@ -1105,13 +1150,24 @@ function initAppShell() {
     return seasonPlan.rows.some((row) => row.resultStatus === "failed" || row.resultStatus === "skipped");
   }
 
+  function singleSeasonLinkReady() {
+    return isFormValid("season");
+  }
+
+  function batchSeasonLinkReady() {
+    const title = inputValue("s_title");
+    const year = inputValue("s_year");
+    return Boolean(title && /^\d{4}$/.test(year) && seasonPlanHasRunnableRows());
+  }
+
   function syncSeasonPlanButtons() {
-    const seasonFormIds = ["s_title", "s_season", "s_year", "s_save", "s_reset_target"];
+    const seasonFormIds = ["s_title", "s_season", "s_year", "s_save", "s_reset_target", "season_plan_reset_target"];
     const movieRun = $("m_run");
     const seasonRun = $("s_run");
     const scanBtn = $("season_plan_scan");
     const runBtn = $("season_plan_run");
     const clearBtn = $("season_plan_clear");
+    const controls = $("season_plan_controls");
     const movieItems = torrentSourceIndex.entries.filter(isTorrentSourceEntrySelectableForMovie);
     const seasonItems = torrentSourceIndex.entries.filter(isTorrentSourceEntrySelectableForSeason);
     syncTorrentSourceSelectState(movieItems.length, seasonItems.length);
@@ -1119,16 +1175,19 @@ function initAppShell() {
       movieRun.disabled = seasonPlanBusy || !isFormValid("movie");
     }
     if (seasonRun) {
-      seasonRun.disabled = seasonPlanBusy || !isFormValid("season");
+      seasonRun.disabled = seasonPlanBusy || !singleSeasonLinkReady();
     }
     if (scanBtn) {
       scanBtn.disabled = seasonPlanBusy || !selectedTorrentSourcePath("season");
     }
     if (runBtn) {
-      runBtn.disabled = seasonPlanBusy || !seasonPlanHasRunnableRows();
+      runBtn.disabled = seasonPlanBusy || !batchSeasonLinkReady();
     }
     if (clearBtn) {
       clearBtn.disabled = seasonPlanBusy;
+    }
+    if (controls) {
+      controls.classList.toggle("hidden", !seasonPlan || seasonPlan.rows.length === 0);
     }
     for (const id of seasonFormIds) {
       const el = $(id);
@@ -1138,13 +1197,22 @@ function initAppShell() {
     }
   }
 
+  function renderSeasonPlanContext() {
+    const context = $("season_plan_context");
+    if (!context) {
+      return;
+    }
+    context.textContent = seasonPlanBatchContextText();
+  }
+
   function renderSeasonPlan() {
     const status = $("season_plan_status");
     const summary = $("season_plan_summary");
+    const context = $("season_plan_context");
     const empty = $("season_plan_empty");
     const wrap = $("season_plan_table_wrap");
     const rowsHost = $("season_plan_rows");
-    if (!status || !summary || !empty || !wrap || !rowsHost) {
+    if (!status || !summary || !context || !empty || !wrap || !rowsHost) {
       return;
     }
 
@@ -1175,6 +1243,7 @@ function initAppShell() {
     }
 
     summary.textContent = seasonPlan ? seasonPlanSummaryText() : "";
+    context.textContent = seasonPlanBatchContextText();
 
     if (!seasonPlan || seasonPlan.rows.length === 0) {
       wrap.classList.add("hidden");
@@ -1268,6 +1337,7 @@ function initAppShell() {
   }
 
   async function scanSeasonPlan() {
+    const requestId = ++seasonPlanScanRequestId;
     const root = selectedTorrentSourcePath("season");
     if (!root) {
       seasonPlanError = t("season.plan.need_root");
@@ -1281,6 +1351,9 @@ function initAppShell() {
 
     try {
       const result = await postJson("/api/list", { dir: root });
+      if (requestId !== seasonPlanScanRequestId) {
+        return false;
+      }
 
       if (isSessionExpiredResult(result)) {
         seasonPlan = null;
@@ -1294,16 +1367,22 @@ function initAppShell() {
       }
 
       seasonPlan = buildSeasonPlan(root, result.data?.items ?? []);
+      seasonPlanScannedRoot = root;
       seasonPlanError = "";
       return true;
     } catch (error) {
+      if (requestId !== seasonPlanScanRequestId) {
+        return false;
+      }
       console.error("Season plan scan failed", error);
       seasonPlan = null;
       seasonPlanError = t("status.request_failed");
       return false;
     } finally {
-      seasonPlanBusy = false;
-      renderSeasonPlan();
+      if (requestId === seasonPlanScanRequestId) {
+        seasonPlanBusy = false;
+        renderSeasonPlan();
+      }
     }
   }
 
@@ -1354,7 +1433,7 @@ function initAppShell() {
       }
     }
 
-    const resetTarget = isChecked("s_reset_target");
+    const resetTarget = seasonResetTargetChecked();
     seasonPlanBusy = true;
     seasonPlanError = "";
     renderSeasonPlan();
@@ -1420,7 +1499,7 @@ function initAppShell() {
     } finally {
       seasonPlanBusy = false;
       if (resetTarget) {
-        $("s_reset_target").checked = false;
+        syncSeasonResetTargetCheckboxes(false);
       }
       renderSeasonPlan();
     }
@@ -1503,17 +1582,23 @@ function initAppShell() {
           flashField("m_year");
           showPreviewFromFields("movie");
         } else {
+          const previousSeasonPath = selectedTorrentSourcePath("season");
           const selection = savedSourceUid || queueTorrentSourceSelection("season", it.srcDir || "");
           applyTorrentSourceUid("season", selection);
+          const nextSeasonPath = selectedTorrentSourcePath("season");
           $("s_title").value = it.title;
           $("s_season").value = it.season;
           $("s_year").value = it.year;
-          $("s_reset_target").checked = false;
+          syncSeasonResetTargetCheckboxes(false);
           flashField("s_src");
           flashField("s_title");
           flashField("s_season");
           flashField("s_year");
           showPreviewFromFields("show");
+          if (nextSeasonPath && nextSeasonPath !== previousSeasonPath && nextSeasonPath !== seasonPlanScannedRoot) {
+            clearSeasonPlanForSourceChange();
+            void maybeAutoScanSeasonPlan();
+          }
         }
         syncRunButtons();
       };
@@ -1591,11 +1676,17 @@ function initAppShell() {
           return;
         }
         if (it.type === "d") {
+          const previousSeasonPath = selectedTorrentSourcePath("season");
           queueTorrentSourceSelection("movie", `${root}/${it.name}`);
-          queueTorrentSourceSelection("season", `${root}/${it.name}`);
-          $("s_reset_target").checked = false;
+          const seasonSelection = queueTorrentSourceSelection("season", `${root}/${it.name}`);
+          const nextSeasonPath = selectedTorrentSourcePath("season");
+          syncSeasonResetTargetCheckboxes(false);
           flashField("m_src");
           flashField("s_src");
+          if (seasonSelection && nextSeasonPath && nextSeasonPath !== previousSeasonPath && nextSeasonPath !== seasonPlanScannedRoot) {
+            clearSeasonPlanForSourceChange();
+            void maybeAutoScanSeasonPlan();
+          }
           syncRunButtons();
           return;
         }
@@ -1981,7 +2072,7 @@ function initAppShell() {
       return;
     }
     const shouldSave = isChecked("s_save");
-    const resetTarget = isChecked("s_reset_target");
+    const resetTarget = seasonResetTargetChecked();
     const entry = shouldSave ? seasonEntryFromForm() : null;
     setLinkStatus("s_status", "info", t("status.running"));
     try {
@@ -2021,7 +2112,7 @@ function initAppShell() {
         await saveItem(entry);
       }
       if (resetTarget) {
-        $("s_reset_target").checked = false;
+        syncSeasonResetTargetCheckboxes(false);
       }
     }
   };
@@ -2069,11 +2160,22 @@ function initAppShell() {
   $("season_plan_run").onclick = runSeasonPlan;
   $("season_plan_clear").onclick = () => clearSeasonPlan();
   $("s_src").addEventListener("sl-change", () => {
-    clearSeasonPlan();
+    clearSeasonPlanForSourceChange();
+    void maybeAutoScanSeasonPlan();
   });
   $("s_src").addEventListener("change", () => {
-    clearSeasonPlan();
+    clearSeasonPlanForSourceChange();
+    void maybeAutoScanSeasonPlan();
   });
+  for (const id of ["s_reset_target", "season_plan_reset_target"]) {
+    const el = $(id);
+    if (!el) continue;
+    for (const eventName of ["sl-change", "change"]) {
+      el.addEventListener(eventName, () => {
+        syncSeasonResetTargetCheckboxes(Boolean(el.checked));
+      });
+    }
+  }
   $("logout_btn").onclick = async () => {
     const result = await postJson("/api/session/logout", {});
     if (isSessionExpiredResult(result)) {
@@ -2134,6 +2236,7 @@ function initAppShell() {
   ensureFloatingTooltipPortal();
   renderSaved();
   renderSeasonPlan();
+  syncSeasonResetTargetCheckboxes(isChecked("s_reset_target"));
   syncRunButtons();
   $("root").value = "torrents";
   loadTorrentSourceItems();

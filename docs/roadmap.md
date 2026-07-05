@@ -5,6 +5,9 @@ Planning notes, release steps, and historical roadmap snapshots moved out of AGE
 ## Project status
 The original user-facing functional scope for NAS media-linking is now effectively closed in the current baseline: browsing, matching, linking, saved templates, auth/session flow, and the DSM-hosted deployment path are all present. The remaining roadmap items are refinement, bilingual publication, and hardening rather than core capability delivery.
 
+## Decision records
+Stable product and UX decisions are recorded in [`docs/adr/`](./adr/). Use one ADR per decision and keep the index in [`docs/adr/README.md`](./adr/README.md).
+
 ## Roadmap (v1.1)
 ### Step: NAS-hosted always-on mode (no custom containers)
 Этот step фиксирует целевую эксплуатацию без ручного локального старта: helper работает на NAS как внутренний сервис для устройств в домашней сети и через WireGuard. Шаг не меняет non-goals (публичный доступ не допускается), а добавляет/уточняет guardrails для безопасного self-hosted режима с минимальной инфраструктурой DSM.

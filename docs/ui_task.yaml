@@ -16,10 +16,13 @@ semantics:
       role: manual_override
     - name: review_status
       role: execution_state
+    - name: reset_target
+      role: destructive_reset_toggle
 runtime_uncertainty:
   confirmed_by_contract:
     - scan returns only first-level items
     - review rows can be toggled and season-overridden manually
+    - selecting a season source can trigger an automatic scan
   ui_synthesized:
     - full folder path shown only on hover
 grouping_variants:
@@ -43,12 +46,19 @@ layout.constraints:
   secondary_groups:
     - saved_items
     - browse
+  scan_flow:
+    - select season source
+    - auto-scan first-level folders
+    - reveal batch review only when rows exist
   ordering_rules:
     - review table must stay visible below the season form
     - long identifiers should not widen the sidebar
+    - destructive reset must be mirrored in both single and batch presentations
+    - batch context should live in the batch header, not in the controls row
   anti_patterns:
     - full paths inline in the review table
     - equal-width sidebar stealing space from review state
+    - forcing a manual scan before any data can be shown
 layout.variants:
   - id: asymmetric_2col
     structure: primary lane wider than sidebar, review table uses fixed columns and hover path disclosure
@@ -60,13 +70,22 @@ implementation:
     - preserve first-level scan semantics
     - preserve manual season override
     - keep review rows compact and readable
+    - mirror reset-target state across both forms
+    - auto-scan on season source selection when a valid selection exists
+    - keep scan copy neutral and batch copy terse
+    - batch run requires the main season title and year fields
 production_transfer:
   baseline_source: current desktop layout with compact review table
   target: DSM-hosted app shell
   invariants:
     - no new domain entities
     - no hidden dependency on path display
+    - batch review remains secondary to the single-season form until data exists
 polish_passes:
   - reduce row noise
   - keep hover access to full path
+  - clarify batch action copy
+  - shorten scan action copy
+  - bind batch availability to the main season fields
+  - move batch form context into the section header
 open_questions: []
