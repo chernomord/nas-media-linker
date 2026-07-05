@@ -1193,21 +1193,18 @@ function initAppShell() {
       tr.className = "align-top";
 
       const folderCell = document.createElement("td");
-      folderCell.className = "px-3 py-2";
+      folderCell.className = "px-3 py-2 align-top";
       const folderWrap = document.createElement("div");
       folderWrap.className = "min-w-0";
       const folderName = document.createElement("div");
       folderName.className = "truncate font-medium text-slate-900";
       folderName.textContent = row.name;
+      folderName.title = row.path;
       folderWrap.appendChild(folderName);
-      const folderPath = document.createElement("div");
-      folderPath.className = "mt-0.5 truncate text-[0.65rem] text-slate-500";
-      folderPath.textContent = row.path;
-      folderWrap.appendChild(folderPath);
       folderCell.appendChild(folderWrap);
 
       const hintCell = document.createElement("td");
-      hintCell.className = "px-3 py-2";
+      hintCell.className = "px-3 py-2 align-top";
       const hintTag = document.createElement("sl-tag");
       hintTag.setAttribute("size", "small");
       hintTag.setAttribute("variant", seasonPlanHintVariant(row));
@@ -1216,7 +1213,7 @@ function initAppShell() {
       hintCell.appendChild(hintTag);
 
       const includeCell = document.createElement("td");
-      includeCell.className = "px-3 py-2";
+      includeCell.className = "px-3 py-2 align-top";
       const include = document.createElement("sl-checkbox");
       include.setAttribute("size", "small");
       include.checked = row.include;
@@ -1231,7 +1228,7 @@ function initAppShell() {
       includeCell.appendChild(include);
 
       const seasonCell = document.createElement("td");
-      seasonCell.className = "px-3 py-2";
+      seasonCell.className = "px-3 py-2 align-top";
       const seasonInput = document.createElement("sl-input");
       seasonInput.setAttribute("size", "small");
       seasonInput.value = row.seasonOverride || row.inferredSeason || "";
@@ -1248,14 +1245,14 @@ function initAppShell() {
       seasonCell.appendChild(seasonInput);
 
       const stateCell = document.createElement("td");
-      stateCell.className = "px-3 py-2";
+      stateCell.className = "px-3 py-2 align-top";
       const stateTag = document.createElement("sl-tag");
       stateTag.setAttribute("size", "small");
       stateTag.setAttribute("variant", seasonPlanRowVariant(row));
       stateTag.textContent = seasonPlanRowStateLabel(row);
       stateCell.appendChild(stateTag);
       const stateNote = document.createElement("div");
-      stateNote.className = "mt-1 text-[0.65rem] leading-snug text-slate-500";
+      stateNote.className = "mt-1 text-[0.65rem] leading-snug text-slate-500 break-words";
       stateNote.textContent = row.resultMessage || row.reason;
       stateCell.appendChild(stateNote);
 

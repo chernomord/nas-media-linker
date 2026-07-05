@@ -1,0 +1,72 @@
+meta:
+  name: season_plan_layout_after_scan
+  status: active
+  problem_level: structural
+semantics:
+  fields:
+    - name: season_source
+      role: source_folder
+    - name: review_row
+      role: first_level_folder_candidate
+    - name: review_hint
+      role: classification_hint
+    - name: review_include
+      role: inclusion_toggle
+    - name: review_season
+      role: manual_override
+    - name: review_status
+      role: execution_state
+runtime_uncertainty:
+  confirmed_by_contract:
+    - scan returns only first-level items
+    - review rows can be toggled and season-overridden manually
+  ui_synthesized:
+    - full folder path shown only on hover
+grouping_variants:
+  - id: left_primary_right_secondary
+    groups:
+      primary: [season_form, season_review]
+      secondary: [saved_items, browse]
+  - id: full_width_review
+    groups:
+      primary: [season_form, season_review]
+      secondary: [saved_items, browse]
+selected_grouping:
+  id: left_primary_right_secondary
+  rationale: Keep the review table in the primary visual lane and prevent the sidebar from compressing scan results.
+layout.constraints:
+  max_columns: 2
+  max_nesting: 2
+  primary_groups:
+    - season_form
+    - season_review
+  secondary_groups:
+    - saved_items
+    - browse
+  ordering_rules:
+    - review table must stay visible below the season form
+    - long identifiers should not widen the sidebar
+  anti_patterns:
+    - full paths inline in the review table
+    - equal-width sidebar stealing space from review state
+layout.variants:
+  - id: asymmetric_2col
+    structure: primary lane wider than sidebar, review table uses fixed columns and hover path disclosure
+  - id: stacked_sidebar
+    structure: primary lane stays wide, sidebar cards stack tighter under each other on narrow viewports
+implementation:
+  target: templates, runtime renderers, i18n copy
+  rules:
+    - preserve first-level scan semantics
+    - preserve manual season override
+    - keep review rows compact and readable
+production_transfer:
+  baseline_source: current desktop layout with compact review table
+  target: DSM-hosted app shell
+  invariants:
+    - no new domain entities
+    - no hidden dependency on path display
+polish_passes:
+  - reduce row noise
+  - keep hover access to full path
+open_questions: []

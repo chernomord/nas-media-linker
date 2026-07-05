@@ -31,7 +31,7 @@
       </div>
     </header>
 
-    <section aria-label="Linking workspace" data-i18n-aria-label="workspace.aria" class="mt-6 grid gap-y-5 gap-x-6 lg:grid-cols-2 lg:items-start">
+    <section aria-label="Linking workspace" data-i18n-aria-label="workspace.aria" class="mt-6 grid gap-y-5 gap-x-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,0.95fr)] lg:items-start">
       <section aria-label="Link actions" data-i18n-aria-label="link_actions.aria" class="min-w-0 grid gap-y-5">
         <sl-card class="glass-card">
           <sl-tab-group value="season">
@@ -76,17 +76,17 @@
                   </div>
                   <sl-tag id="season_plan_status" size="small" variant="neutral" class="mt-3 hidden"></sl-tag>
                   <p id="season_plan_summary" class="mt-2 text-xs leading-snug text-slate-600"></p>
-                  <p id="season_plan_note" class="mt-2 text-xs leading-snug text-slate-500" data-i18n="season.plan.note">Scan only reads first-level folders. Any row can still be included manually and pointed to a different season.</p>
+                  <p id="season_plan_note" class="mt-2 text-xs leading-snug text-slate-500" data-i18n="season.plan.note">Scan only reads first-level folders. Review by folder name; hover for the full path.</p>
                   <div id="season_plan_empty" class="mt-3 hidden rounded-2xl border border-dashed border-slate-300 bg-white/70 p-3 text-xs text-slate-600" data-i18n="season.plan.empty">Select a folder and scan it to build a review table.</div>
                   <div id="season_plan_table_wrap" class="mt-3 hidden overflow-auto rounded-2xl border border-slate-200 bg-white/90">
-                    <table class="min-w-full border-collapse text-left text-xs">
+                    <table class="w-full table-fixed border-collapse text-left text-xs">
                       <thead class="sticky top-0 bg-slate-50 text-slate-500">
                         <tr>
-                          <th class="px-3 py-2 font-medium" data-i18n="season.plan.col_folder">Folder</th>
-                          <th class="px-3 py-2 font-medium" data-i18n="season.plan.col_hint">Hint</th>
-                          <th class="px-3 py-2 font-medium" data-i18n="season.plan.col_include">Include</th>
-                          <th class="px-3 py-2 font-medium" data-i18n="season.plan.col_season">Season</th>
-                          <th class="px-3 py-2 font-medium" data-i18n="season.plan.col_status">Status</th>
+                          <th class="w-[48%] px-3 py-2 font-medium" data-i18n="season.plan.col_folder">Folder</th>
+                          <th class="w-24 px-3 py-2 font-medium" data-i18n="season.plan.col_hint">Hint</th>
+                          <th class="w-24 px-3 py-2 font-medium" data-i18n="season.plan.col_include">Include</th>
+                          <th class="w-28 px-3 py-2 font-medium" data-i18n="season.plan.col_season">Season</th>
+                          <th class="w-32 px-3 py-2 font-medium" data-i18n="season.plan.col_status">Status</th>
                         </tr>
                       </thead>
                       <tbody id="season_plan_rows" class="divide-y divide-slate-100"></tbody>
