@@ -55,12 +55,20 @@ function makeSavedTemplatesStore() {
 }
 
 const fixtureRoots = new Set([TORRENTS_ROOT, MOVIES_ROOT, TV_ROOT]);
-const fixtureSearchItems = Array.from({ length: 8 }, (_, index) => ({
-  title: `Kimetsu no Yaiba result ${index + 1} with a deliberately long title`,
-  year: 2024,
-  type: "show",
-  summary: `Fixture result ${index + 1}`,
-}));
+const fixtureSearchItems = [
+  ...Array.from({ length: 8 }, (_, index) => ({
+    title: `Kimetsu no Yaiba result ${index + 1} with a deliberately long title`,
+    year: 2024,
+    type: "movie",
+    summary: `Movie fixture result ${index + 1}`,
+  })),
+  ...Array.from({ length: 8 }, (_, index) => ({
+    title: `Kimetsu no Yaiba result ${index + 1} with a deliberately long title`,
+    year: 2024,
+    type: "show",
+    summary: `Show fixture result ${index + 1}`,
+  })),
+];
 
 const executor = {
   async linkMovie() {

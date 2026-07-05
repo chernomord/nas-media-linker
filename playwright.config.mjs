@@ -1,9 +1,11 @@
 import path from "node:path";
 
 import { defineConfig, devices } from "@playwright/test";
+import { chromium } from "playwright";
 
 const port = Number(process.env.UI_REGRESSION_PORT || 4173);
 const tmpDir = process.env.TMPDIR || "/tmp";
+const executablePath = chromium.executablePath();
 
 export default defineConfig({
   testDir: "./test-ui",
@@ -18,12 +20,18 @@ export default defineConfig({
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "off",
+    launchOptions: {
+      executablePath,
+    },
   },
   projects: [
     {
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
+        launchOptions: {
+          executablePath,
+        },
       },
     },
   ],

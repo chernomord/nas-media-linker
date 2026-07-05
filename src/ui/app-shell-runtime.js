@@ -1,6 +1,10 @@
 import { onLocaleChange, t } from "./i18n/index.js";
 import { parseSeasonLinkSummary } from "./season-link-summary.mjs";
 import {
+  buildSeasonPlan,
+  resolveSeasonPlanRowSeason,
+} from "./season-plan.mjs";
+import {
   createTorrentSourceIndex,
   resolveSavedTorrentSourceUid,
   resolveTorrentSourcePathFromUid,
@@ -325,6 +329,9 @@ function initAppShell() {
   let torrentSourceLoaded = false;
   let torrentSourceError = "";
   let torrentSourceIndex = createTorrentSourceIndex(ROOT_PATHS.torrents, []);
+  let seasonPlan = null;
+  let seasonPlanBusy = false;
+  let seasonPlanError = "";
   let pendingTorrentSourceSelection = {
     movie: "",
     season: "",
@@ -589,6 +596,20 @@ function initAppShell() {
     setTimeout(() => el.classList.remove("flash"), 700);
   }
 
+  function flashElement(el) {
+    if (!el) return;
+    el.classList.add("flash");
+    setTimeout(() => el.classList.remove("flash"), 700);
+  }
+
+  function escapeCssAttributeValue(value) {
+    const raw = String(value ?? "");
+    if (window.CSS && typeof window.CSS.escape === "function") {
+      return window.CSS.escape(raw);
+    }
+    return raw.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
+  }
+
   function inputValue(id) {
     const el = $(id);
     return String(el?.value ?? "").trim();
@@ -671,6 +692,17 @@ function initAppShell() {
     return value === ROOT_PATHS.torrents || value.startsWith(`${ROOT_PATHS.torrents}/`);
   }
 
+  function syncTorrentSourceSelectState(movieCount, seasonCount) {
+    const movieSelect = $("m_src");
+    const seasonSelect = $("s_src");
+    if (movieSelect) {
+      movieSelect.disabled = seasonPlanBusy || !torrentSourceLoaded || Boolean(torrentSourceError) || movieCount === 0;
+    }
+    if (seasonSelect) {
+      seasonSelect.disabled = seasonPlanBusy || !torrentSourceLoaded || Boolean(torrentSourceError) || seasonCount === 0;
+    }
+  }
+
   function renderTorrentSourceOptions() {
     const movieSelect = $("m_src");
     const seasonSelect = $("s_src");
@@ -710,8 +742,7 @@ function initAppShell() {
         ? (seasonItems.length > 0 ? t("season.source_placeholder") : t("source.empty"))
         : t("source.loading"));
 
-    movieSelect.disabled = !torrentSourceLoaded || Boolean(torrentSourceError) || movieItems.length === 0;
-    seasonSelect.disabled = !torrentSourceLoaded || Boolean(torrentSourceError) || seasonItems.length === 0;
+    syncTorrentSourceSelectState(movieItems.length, seasonItems.length);
 
     applyTorrentSourceUid("movie", pendingTorrentSourceSelection.movie || movieSelect.value || "");
     applyTorrentSourceUid("season", pendingTorrentSourceSelection.season || seasonSelect.value || "");
@@ -957,8 +988,9 @@ function initAppShell() {
   }
 
   function syncRunButtons() {
-    $("m_run").disabled = !isFormValid("movie");
-    $("s_run").disabled = !isFormValid("season");
+    $("m_run").disabled = seasonPlanBusy || !isFormValid("movie");
+    $("s_run").disabled = seasonPlanBusy || !isFormValid("season");
+    syncSeasonPlanButtons();
   }
 
   function showValidationError(kind) {
@@ -986,6 +1018,415 @@ function initAppShell() {
       kind: "ok",
       message: t("status.ok_http", { status: result.status, codePart }),
     };
+  }
+
+  function clearSeasonPlan({ preserveError = false } = {}) {
+    seasonPlan = null;
+    if (!preserveError) {
+      seasonPlanError = "";
+    }
+    renderSeasonPlan();
+  }
+
+  function seasonPlanHintLabel(row) {
+    if (row.hint === "candidate") return t("season.plan.hint_candidate");
+    if (row.hint === "ignored") return t("season.plan.hint_ignored");
+    return t("season.plan.hint_ambiguous");
+  }
+
+  function seasonPlanHintVariant(row) {
+    if (row.hint === "candidate") return "success";
+    if (row.hint === "ignored") return "neutral";
+    return "warning";
+  }
+
+  function seasonPlanRowState(row) {
+    if (row.resultStatus) {
+      return row.resultStatus;
+    }
+    if (!row.include) {
+      return "excluded";
+    }
+    return resolveSeasonPlanRowSeason(row) ? "ready" : "needs-season";
+  }
+
+  function seasonPlanRowVariant(row) {
+    const state = seasonPlanRowState(row);
+    if (state === "ready" || state === "linked") return "success";
+    if (state === "excluded") return "neutral";
+    if (state === "needs-season" || state === "pending") return "warning";
+    if (state === "skipped") return "warning";
+    if (state === "failed") return "danger";
+    return "neutral";
+  }
+
+  function seasonPlanRowStateLabel(row) {
+    const state = seasonPlanRowState(row);
+    if (state === "ready") return t("season.plan.state_ready");
+    if (state === "excluded") return t("season.plan.state_excluded");
+    if (state === "needs-season") return t("season.plan.state_needs_review");
+    if (state === "pending") return t("season.plan.state_running");
+    if (state === "linked") return t("season.plan.state_linked");
+    if (state === "skipped") return t("season.plan.state_skipped");
+    if (state === "failed") return t("season.plan.state_failed");
+    return state;
+  }
+
+  function seasonPlanSummaryText() {
+    if (!seasonPlan) {
+      return "";
+    }
+    const summary = seasonPlan.summary || {};
+    const parts = [
+      t("season.plan.summary", {
+        folders: summary.folderCount || 0,
+        candidate: summary.candidateCount || 0,
+        ignored: summary.ignoredCount || 0,
+        ambiguous: summary.ambiguousCount || 0,
+      }),
+    ];
+    if ((summary.rootFileCount || 0) > 0) {
+      parts.push(t("season.plan.summary_files", { files: summary.rootFileCount }));
+    }
+    return parts.join(" · ");
+  }
+
+  function seasonPlanHasRunnableRows() {
+    if (!seasonPlan) {
+      return false;
+    }
+    return seasonPlan.rows.some((row) => row.include && Boolean(resolveSeasonPlanRowSeason(row)));
+  }
+
+  function seasonPlanHasProblems() {
+    if (!seasonPlan) {
+      return false;
+    }
+    return seasonPlan.rows.some((row) => row.resultStatus === "failed" || row.resultStatus === "skipped");
+  }
+
+  function syncSeasonPlanButtons() {
+    const seasonFormIds = ["s_title", "s_season", "s_year", "s_save", "s_reset_target"];
+    const movieRun = $("m_run");
+    const seasonRun = $("s_run");
+    const scanBtn = $("season_plan_scan");
+    const runBtn = $("season_plan_run");
+    const clearBtn = $("season_plan_clear");
+    const movieItems = torrentSourceIndex.entries.filter(isTorrentSourceEntrySelectableForMovie);
+    const seasonItems = torrentSourceIndex.entries.filter(isTorrentSourceEntrySelectableForSeason);
+    syncTorrentSourceSelectState(movieItems.length, seasonItems.length);
+    if (movieRun) {
+      movieRun.disabled = seasonPlanBusy || !isFormValid("movie");
+    }
+    if (seasonRun) {
+      seasonRun.disabled = seasonPlanBusy || !isFormValid("season");
+    }
+    if (scanBtn) {
+      scanBtn.disabled = seasonPlanBusy || !selectedTorrentSourcePath("season");
+    }
+    if (runBtn) {
+      runBtn.disabled = seasonPlanBusy || !seasonPlanHasRunnableRows();
+    }
+    if (clearBtn) {
+      clearBtn.disabled = seasonPlanBusy;
+    }
+    for (const id of seasonFormIds) {
+      const el = $(id);
+      if (el) {
+        el.disabled = seasonPlanBusy;
+      }
+    }
+  }
+
+  function renderSeasonPlan() {
+    const status = $("season_plan_status");
+    const summary = $("season_plan_summary");
+    const empty = $("season_plan_empty");
+    const wrap = $("season_plan_table_wrap");
+    const rowsHost = $("season_plan_rows");
+    if (!status || !summary || !empty || !wrap || !rowsHost) {
+      return;
+    }
+
+    status.classList.remove("hidden");
+    rowsHost.innerHTML = "";
+
+    if (seasonPlanBusy) {
+      status.setAttribute("variant", "neutral");
+      status.textContent = t("season.plan.busy");
+    } else if (seasonPlanError) {
+      status.setAttribute("variant", "warning");
+      status.textContent = seasonPlanError;
+    } else if (!seasonPlan) {
+      status.setAttribute("variant", "neutral");
+      status.textContent = t("season.plan.idle");
+    } else if (seasonPlan.rows.length === 0) {
+      status.setAttribute("variant", "neutral");
+      status.textContent = t("season.plan.no_rows");
+    } else if (seasonPlanHasProblems()) {
+      status.setAttribute("variant", "warning");
+      status.textContent = t("season.plan.needs_attention");
+    } else if (seasonPlanHasRunnableRows()) {
+      status.setAttribute("variant", "success");
+      status.textContent = t("season.plan.ready");
+    } else {
+      status.setAttribute("variant", "warning");
+      status.textContent = t("season.plan.needs_attention");
+    }
+
+    summary.textContent = seasonPlan ? seasonPlanSummaryText() : "";
+
+    if (!seasonPlan || seasonPlan.rows.length === 0) {
+      wrap.classList.add("hidden");
+      empty.classList.remove("hidden");
+      empty.textContent = seasonPlan ? t("season.plan.no_rows") : t("season.plan.empty");
+      syncSeasonPlanButtons();
+      return;
+    }
+
+    empty.classList.add("hidden");
+    wrap.classList.remove("hidden");
+
+    seasonPlan.rows.forEach((row, index) => {
+      const tr = document.createElement("tr");
+      tr.dataset.planRowPath = row.path;
+      tr.className = "align-top";
+
+      const folderCell = document.createElement("td");
+      folderCell.className = "px-3 py-2";
+      const folderWrap = document.createElement("div");
+      folderWrap.className = "min-w-0";
+      const folderName = document.createElement("div");
+      folderName.className = "truncate font-medium text-slate-900";
+      folderName.textContent = row.name;
+      folderWrap.appendChild(folderName);
+      const folderPath = document.createElement("div");
+      folderPath.className = "mt-0.5 truncate text-[0.65rem] text-slate-500";
+      folderPath.textContent = row.path;
+      folderWrap.appendChild(folderPath);
+      folderCell.appendChild(folderWrap);
+
+      const hintCell = document.createElement("td");
+      hintCell.className = "px-3 py-2";
+      const hintTag = document.createElement("sl-tag");
+      hintTag.setAttribute("size", "small");
+      hintTag.setAttribute("variant", seasonPlanHintVariant(row));
+      hintTag.setAttribute("title", row.reason);
+      hintTag.textContent = seasonPlanHintLabel(row);
+      hintCell.appendChild(hintTag);
+
+      const includeCell = document.createElement("td");
+      includeCell.className = "px-3 py-2";
+      const include = document.createElement("sl-checkbox");
+      include.setAttribute("size", "small");
+      include.checked = row.include;
+      include.disabled = seasonPlanBusy;
+      include.addEventListener("sl-change", () => {
+        row.include = include.checked;
+        row.resultStatus = "";
+        row.resultMessage = "";
+        seasonPlanError = "";
+        renderSeasonPlan();
+      });
+      includeCell.appendChild(include);
+
+      const seasonCell = document.createElement("td");
+      seasonCell.className = "px-3 py-2";
+      const seasonInput = document.createElement("sl-input");
+      seasonInput.setAttribute("size", "small");
+      seasonInput.value = row.seasonOverride || row.inferredSeason || "";
+      seasonInput.placeholder = row.inferredSeason || "01";
+      seasonInput.setAttribute("data-plan-row-season", row.path);
+      seasonInput.disabled = seasonPlanBusy;
+      seasonInput.addEventListener("sl-change", () => {
+        row.seasonOverride = String(seasonInput.value ?? "").trim();
+        row.resultStatus = "";
+        row.resultMessage = "";
+        seasonPlanError = "";
+        renderSeasonPlan();
+      });
+      seasonCell.appendChild(seasonInput);
+
+      const stateCell = document.createElement("td");
+      stateCell.className = "px-3 py-2";
+      const stateTag = document.createElement("sl-tag");
+      stateTag.setAttribute("size", "small");
+      stateTag.setAttribute("variant", seasonPlanRowVariant(row));
+      stateTag.textContent = seasonPlanRowStateLabel(row);
+      stateCell.appendChild(stateTag);
+      const stateNote = document.createElement("div");
+      stateNote.className = "mt-1 text-[0.65rem] leading-snug text-slate-500";
+      stateNote.textContent = row.resultMessage || row.reason;
+      stateCell.appendChild(stateNote);
+
+      tr.appendChild(folderCell);
+      tr.appendChild(hintCell);
+      tr.appendChild(includeCell);
+      tr.appendChild(seasonCell);
+      tr.appendChild(stateCell);
+      rowsHost.appendChild(tr);
+    });
+
+    syncSeasonPlanButtons();
+  }
+
+  async function scanSeasonPlan() {
+    const root = selectedTorrentSourcePath("season");
+    if (!root) {
+      seasonPlanError = t("season.plan.need_root");
+      renderSeasonPlan();
+      return false;
+    }
+
+    seasonPlanBusy = true;
+    seasonPlanError = "";
+    renderSeasonPlan();
+
+    try {
+      const result = await postJson("/api/list", { dir: root });
+
+      if (isSessionExpiredResult(result)) {
+        seasonPlan = null;
+        seasonPlanError = t("status.session_expired");
+        return false;
+      }
+      if (!result.ok) {
+        seasonPlan = null;
+        seasonPlanError = result.data?.stderr || result.data?.error || `HTTP ${result.status}`;
+        return false;
+      }
+
+      seasonPlan = buildSeasonPlan(root, result.data?.items ?? []);
+      seasonPlanError = "";
+      return true;
+    } catch (error) {
+      console.error("Season plan scan failed", error);
+      seasonPlan = null;
+      seasonPlanError = t("status.request_failed");
+      return false;
+    } finally {
+      seasonPlanBusy = false;
+      renderSeasonPlan();
+    }
+  }
+
+  async function runSeasonPlan() {
+    if (!seasonPlan || !seasonPlan.rows.length) {
+      seasonPlanError = t("season.plan.empty");
+      renderSeasonPlan();
+      return;
+    }
+
+    const title = inputValue("s_title");
+    const year = inputValue("s_year");
+    if (!title) {
+      seasonPlanError = t("validation.need_title");
+      renderSeasonPlan();
+      flashField("s_title");
+      return;
+    }
+    if (!year) {
+      seasonPlanError = t("validation.need_year");
+      renderSeasonPlan();
+      flashField("s_year");
+      return;
+    }
+    if (!/^\d{4}$/.test(year)) {
+      seasonPlanError = t("validation.year_format");
+      renderSeasonPlan();
+      flashField("s_year");
+      return;
+    }
+
+    const includedRows = seasonPlan.rows.filter((row) => row.include);
+    if (includedRows.length === 0) {
+      seasonPlanError = t("season.plan.no_included_rows");
+      renderSeasonPlan();
+      return;
+    }
+
+    for (const row of includedRows) {
+      const season = resolveSeasonPlanRowSeason(row);
+      if (!season) {
+        seasonPlanError = t("season.plan.need_season_for_row", { name: row.name });
+        renderSeasonPlan();
+        const rowEl = document.querySelector(`[data-plan-row-path="${escapeCssAttributeValue(row.path)}"]`);
+        const seasonEl = rowEl?.querySelector('[data-plan-row-season]');
+        flashElement(seasonEl);
+        return;
+      }
+    }
+
+    const resetTarget = isChecked("s_reset_target");
+    seasonPlanBusy = true;
+    seasonPlanError = "";
+    renderSeasonPlan();
+    setLinkStatus("s_status", "info", t("status.running"));
+
+    try {
+      for (const row of includedRows) {
+        row.resultStatus = "pending";
+        row.resultMessage = t("season.plan.state_running");
+        renderSeasonPlan();
+
+        const season = resolveSeasonPlanRowSeason(row);
+        const result = await post("/api/link/season", {
+          srcDir: row.path,
+          title,
+          season,
+          year,
+          resetTarget,
+        });
+        log(result.text);
+
+        if (isSessionExpiredResult(result)) {
+          row.resultStatus = "";
+          row.resultMessage = "";
+          seasonPlanBusy = false;
+          seasonPlanError = t("status.session_expired");
+          setLinkStatus("s_status", "warn", t("status.session_expired"));
+          renderSeasonPlan();
+          return;
+        }
+
+        const codePart = result.data?.code != null ? t("status.exit_code", { code: result.data.code }) : "";
+        if (result.ok) {
+          const summary = seasonLinkMessage(result);
+          row.resultStatus = summary.kind === "warn" ? "skipped" : "linked";
+          row.resultMessage = summary.kind === "warn"
+            ? summary.message
+            : t("status.ok_http", { status: result.status, codePart });
+          if (summary.kind === "warn") {
+            toast("warn", t("toast.season_partial"), summary.message);
+          } else {
+            toast("ok", t("toast.season_linked"), `HTTP ${result.status}${codePart}`);
+          }
+        } else {
+          row.resultStatus = "failed";
+          row.resultMessage = t("status.error_http", { status: result.status }) + codePart;
+          toast("error", t("toast.season_failed"), `HTTP ${result.status}${codePart}`);
+        }
+        renderSeasonPlan();
+      }
+
+      if (seasonPlanHasProblems()) {
+        setLinkStatus("s_status", "warn", t("season.plan.needs_attention"));
+      } else {
+        setLinkStatus("s_status", "ok", t("status.ready"));
+      }
+      seasonPlanError = "";
+    } catch (error) {
+      console.error("Season batch link request failed", error);
+      seasonPlanError = t("status.request_failed");
+      setLinkStatus("s_status", "error", t("status.request_failed"));
+      toast("error", t("toast.season_failed"), t("toast.request_error"));
+    } finally {
+      seasonPlanBusy = false;
+      if (resetTarget) {
+        $("s_reset_target").checked = false;
+      }
+      renderSeasonPlan();
+    }
   }
 
   function renderSaved() {
@@ -1627,6 +2068,15 @@ function initAppShell() {
   $("m_year").addEventListener("input", debouncedMoviePreview);
   $("s_title").addEventListener("input", debouncedShowPreview);
   $("s_year").addEventListener("input", debouncedShowPreview);
+  $("season_plan_scan").onclick = scanSeasonPlan;
+  $("season_plan_run").onclick = runSeasonPlan;
+  $("season_plan_clear").onclick = () => clearSeasonPlan();
+  $("s_src").addEventListener("sl-change", () => {
+    clearSeasonPlan();
+  });
+  $("s_src").addEventListener("change", () => {
+    clearSeasonPlan();
+  });
   $("logout_btn").onclick = async () => {
     const result = await postJson("/api/session/logout", {});
     if (isSessionExpiredResult(result)) {
@@ -1671,6 +2121,7 @@ function initAppShell() {
   onLocaleChange(() => {
     renderTorrentSourceOptions();
     renderSaved();
+    renderSeasonPlan();
     if (listedItems.length > 0) {
       renderBrowseList(listedRoot, listedItems);
     }
@@ -1685,6 +2136,7 @@ function initAppShell() {
 
   ensureFloatingTooltipPortal();
   renderSaved();
+  renderSeasonPlan();
   syncRunButtons();
   $("root").value = "torrents";
   loadTorrentSourceItems();

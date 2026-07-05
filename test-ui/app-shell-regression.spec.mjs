@@ -54,7 +54,7 @@ test("browse list keeps long names truncated inside the card", async ({ page }) 
 
   expect(tooltipState.hasTitle).toBe(false);
   expect(tooltipState.portalId).toBe("floating_tooltip_portal");
-  expect(tooltipState.tooltipRole).toBe("name-tooltip");
+  expect(tooltipState.tooltipRole).toBe("floating-tooltip");
   expect(tooltipState.tooltipHidden).toBe(true);
   expect(metrics.textOverflow).toBe("ellipsis");
   expect(metrics.whiteSpace).toBe("nowrap");
@@ -70,15 +70,18 @@ test("browse torrents file rows can fill the movie source uid", async ({ page })
   await setShoelaceValue(page, "#root", "torrents");
   await page.locator("#browse").click();
 
-  const fileName = "Taboo.Gohatto.1999.1080p.WEB-DL.mkv";
+  const fileName = "Standalone.Movie.2024.1080p.WEB-DL.H.265.mkv";
   const row = page.locator("#list li").filter({ hasText: fileName }).first();
   await expect(row).toBeVisible();
 
   await expect(row.locator("sl-button")).toHaveCount(2);
   await row.locator("sl-button").last().click();
 
-  await expect(page.locator("#m_src")).toHaveValue(/^\d+:\d+$/);
-  await expect(page.locator("#s_src")).toHaveValue("");
+  const movieSourceValue = await page.locator("#m_src").evaluate((element) => element.value);
+  const seasonSourceValue = await page.locator("#s_src").evaluate((element) => element.value);
+
+  expect(movieSourceValue).toMatch(/^\d+:\d+$/);
+  expect(seasonSourceValue).toBe("");
 });
 
 test("preview cards keep long titles inside the linking column", async ({ page }) => {
@@ -86,6 +89,9 @@ test("preview cards keep long titles inside the linking column", async ({ page }
 
   await setShoelaceValue(page, "#m_title", "Kimetsu");
   await setShoelaceValue(page, "#m_year", "2024");
+
+  await expect(page.locator("#m_ac button")).toHaveCount(8);
+  await page.locator("#m_ac button").first().click();
 
   await page.waitForFunction(() => {
     const list = document.getElementById("m_preview_list");
@@ -153,7 +159,7 @@ test("saved list keeps long names truncated inside the card", async ({ page }) =
 
   expect(tooltipState.hasTitle).toBe(false);
   expect(tooltipState.portalId).toBe("floating_tooltip_portal");
-  expect(tooltipState.tooltipRole).toBe("name-tooltip");
+  expect(tooltipState.tooltipRole).toBe("floating-tooltip");
   expect(tooltipState.tooltipHidden).toBe(true);
   expect(metrics.textOverflow).toBe("ellipsis");
   expect(metrics.whiteSpace).toBe("nowrap");

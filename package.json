@@ -8,7 +8,7 @@
     "start:local": "node --experimental-sqlite server.mjs",
     "build:ui": "vite build",
     "test": "node --experimental-sqlite --test",
-    "test:ui": "npm run build:ui && PLAYWRIGHT_BROWSERS_PATH=/tmp/nas-linker-playwright-browsers playwright test",
+    "test:ui": "PLAYWRIGHT_BROWSERS_PATH=/tmp/nas-linker-playwright-browsers node scripts/ensure-playwright-chromium.mjs && npm run build:ui && PLAYWRIGHT_BROWSERS_PATH=/tmp/nas-linker-playwright-browsers playwright test",
     "test:ui:install": "PLAYWRIGHT_BROWSERS_PATH=/tmp/nas-linker-playwright-browsers playwright install chromium"
   },
   "keywords": [
