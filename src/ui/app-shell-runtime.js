@@ -310,10 +310,7 @@ function initAppShell() {
   const LS_KEY = "nas_linker_saved";
   const ROOT_PATHS = {
     torrents: document.body.dataset.rootTorrents || "",
-    movies: document.body.dataset.rootMovies || "",
-    tv: document.body.dataset.rootTv || "",
   };
-  const BROWSE_ROW_TEMPLATE_ID = "browse-row-template";
   const SAVED_ROW_TEMPLATE_ID = "saved-row-template";
 
   let pendingDeleteId = null;
@@ -322,9 +319,6 @@ function initAppShell() {
   let savedItemsError = "";
   let logText = "";
   let sessionFailureState = null;
-  let listedRoot = "";
-  let listedItems = [];
-  let listErrorText = "";
   let torrentSourceItems = [];
   let torrentSourceLoaded = false;
   let torrentSourceError = "";
@@ -1605,7 +1599,7 @@ function initAppShell() {
       actions.appendChild(fillBtn);
       bindFloatingTooltip(
         fillBtn,
-        canFill ? t("saved.fill_form") : t("browse.fill_inputs_torrents_only"),
+        canFill ? t("saved.fill_form") : t("source.fill_inputs_torrents_only"),
       );
 
       const delBtn = document.createElement("sl-button");
@@ -1623,79 +1617,6 @@ function initAppShell() {
       bindFloatingTooltip(delBtn, t("saved.delete"));
 
       list.appendChild(li);
-    }
-  }
-
-  function renderBrowseList(root, items) {
-    const ul = $("list");
-    hideFloatingTooltip();
-    ul.innerHTML = "";
-    for (const it of items) {
-      const li = cloneTemplate(BROWSE_ROW_TEMPLATE_ID);
-      const icon = li.querySelector('[data-role="icon"]');
-      const nameHost = li.querySelector('[data-role="name-host"]');
-      const copyBtn = li.querySelector('[data-role="copy-btn"]');
-      const fillBtn = li.querySelector('[data-role="fill-btn"]');
-      const nameNode = document.createElement("span");
-      const iconName = it.type === "d" ? "folder" : "film";
-      const iconColor = it.type === "d" ? "text-amber-600" : "text-slate-500";
-      const displayName = it.name;
-
-      icon.setAttribute("name", iconName);
-      icon.className = `${iconColor} flex-shrink-0`;
-
-      nameNode.dataset.role = "name";
-      nameNode.className = "block min-w-0 flex-1 truncate";
-      nameNode.textContent = displayName;
-      nameHost.appendChild(nameNode);
-      bindFloatingTooltip(nameHost, displayName);
-
-      bindFloatingTooltip(copyBtn, t("browse.copy_path"));
-      copyBtn.onclick = async () => {
-        const path = `${root}/${it.name}`;
-        try {
-          await navigator.clipboard.writeText(path);
-          showTransientTooltip(copyBtn, t("browse.copied"));
-        } catch {
-          const ok = fallbackCopy(path);
-          if (ok) {
-            showTransientTooltip(copyBtn, t("browse.copied"));
-          } else {
-            log(t("browse.clipboard_error"));
-          }
-        }
-      };
-      const canFillFromBrowse = root === ROOT_PATHS.torrents;
-      fillBtn.disabled = !canFillFromBrowse;
-      bindFloatingTooltip(
-        fillBtn,
-        canFillFromBrowse ? t("browse.fill_inputs") : t("browse.fill_inputs_torrents_only"),
-      );
-      fillBtn.onclick = () => {
-        if (!canFillFromBrowse) {
-          return;
-        }
-        if (it.type === "d") {
-          const previousSeasonPath = selectedTorrentSourcePath("season");
-          queueTorrentSourceSelection("movie", `${root}/${it.name}`);
-          const seasonSelection = queueTorrentSourceSelection("season", `${root}/${it.name}`);
-          const nextSeasonPath = selectedTorrentSourcePath("season");
-          syncSeasonResetTargetCheckboxes(false);
-          flashField("m_src");
-          flashField("s_src");
-          if (seasonSelection && nextSeasonPath && nextSeasonPath !== previousSeasonPath && nextSeasonPath !== seasonPlanScannedRoot) {
-            clearSeasonPlanForSourceChange();
-            void maybeAutoScanSeasonPlan();
-          }
-          syncRunButtons();
-          return;
-        }
-        queueTorrentSourceSelection("movie", `${root}/${it.name}`);
-        flashField("m_src");
-        syncRunButtons();
-      };
-
-      ul.appendChild(li);
     }
   }
 
@@ -2117,41 +2038,6 @@ function initAppShell() {
     }
   };
 
-  $("browse").onclick = async () => {
-    const sel = $("root");
-    const opt = sel?.selectedOptions?.[0];
-    const root = opt?.dataset?.path || ROOT_PATHS[sel?.value] || "";
-    if (!root) {
-      log(t("browse.root_not_selected"));
-      return;
-    }
-    $("list").classList.add("hidden");
-    $("list_loading").classList.remove("hidden");
-    const result = await postJson("/api/list", { dir: root });
-    $("list_loading").classList.add("hidden");
-    $("list").classList.remove("hidden");
-    if (isSessionExpiredResult(result)) {
-      log(t("browse.session_expired"));
-      listedRoot = root;
-      listedItems = [];
-      listErrorText = t("browse.session_expired");
-      return;
-    }
-    const data = result.data || {};
-    if (!data.ok) {
-      const errorText = data.stderr || "error";
-      log(errorText);
-      listedRoot = root;
-      listedItems = [];
-      listErrorText = errorText;
-      return;
-    }
-    listedRoot = root;
-    listedItems = data.items ?? [];
-    listErrorText = "";
-    renderBrowseList(listedRoot, listedItems);
-  };
-
   $("m_title").addEventListener("input", debouncedMoviePreview);
   $("m_year").addEventListener("input", debouncedMoviePreview);
   $("s_title").addEventListener("input", debouncedShowPreview);
@@ -2221,15 +2107,9 @@ function initAppShell() {
     renderTorrentSourceOptions();
     renderSaved();
     renderSeasonPlan();
-    if (listedItems.length > 0) {
-      renderBrowseList(listedRoot, listedItems);
-    }
     if (sessionFailureState) {
       $("session_message").textContent = t(sessionFailureState.messageKey);
       $("session_hint").textContent = t(sessionFailureState.hintKey);
-    }
-    if (listErrorText) {
-      log(listErrorText);
     }
   });
 
@@ -2238,7 +2118,6 @@ function initAppShell() {
   renderSeasonPlan();
   syncSeasonResetTargetCheckboxes(isChecked("s_reset_target"));
   syncRunButtons();
-  $("root").value = "torrents";
   loadTorrentSourceItems();
 
   function closeDeleteDialog() {

@@ -4,6 +4,10 @@ meta:
   problem_level: structural
 semantics:
   fields:
+    - name: season_title
+      role: shared_title
+    - name: season_year
+      role: shared_year
     - name: season_source
       role: source_folder
     - name: review_row
@@ -23,42 +27,56 @@ runtime_uncertainty:
     - scan returns only first-level items
     - review rows can be toggled and season-overridden manually
     - selecting a season source can trigger an automatic scan
+    - batch uses the shared title/year but not the single-season season field
   ui_synthesized:
     - full folder path shown only on hover
 grouping_variants:
   - id: left_primary_right_secondary
     groups:
-      primary: [season_form, season_review]
-      secondary: [saved_items, browse]
+      primary: [season_header, season_form, season_review]
+      secondary: [saved_items]
   - id: full_width_review
     groups:
-      primary: [season_form, season_review]
-      secondary: [saved_items, browse]
+      primary: [season_header, season_form, season_review]
+      secondary: [saved_items]
 selected_grouping:
   id: left_primary_right_secondary
-  rationale: Keep the review table in the primary visual lane and prevent the sidebar from compressing scan results.
+  rationale: Keep the shared header and review table in the primary visual lane and prevent the sidebar from compressing scan results.
 layout.constraints:
   max_columns: 2
   max_nesting: 2
   primary_groups:
+    - season_header
     - season_form
     - season_review
   secondary_groups:
     - saved_items
-    - browse
   scan_flow:
     - select season source
     - auto-scan first-level folders
     - reveal batch review only when rows exist
+    - keep batch expanded after execution for now
+  density_rules:
+    - keep the single-season action above the fold on a standard mobile viewport
+    - keep batch review compact enough that it reads as subordinate state, not a second full form
+    - keep saved items visually lighter than the linking surfaces
   ordering_rules:
-    - review table must stay visible below the season form
+    - shared title/year stay above both actions
+    - single-season action remains directly available
+    - batch review stays below the season form
+    - secondary surfaces should not look equal to the primary task surface
     - long identifiers should not widen the sidebar
     - destructive reset must be mirrored in both single and batch presentations
     - batch context should live in the batch header, not in the controls row
+    - source discovery should stay inside the source dropdown, not as a separate browse surface
   anti_patterns:
     - full paths inline in the review table
     - equal-width sidebar stealing space from review state
     - forcing a manual scan before any data can be shown
+    - a batch card that reads like a second main form
+    - saved block competing with the linking action
+    - collapsing batch immediately after execution
+    - making Save mode-specific before the storage/API contract is ready
 layout.variants:
   - id: asymmetric_2col
     structure: primary lane wider than sidebar, review table uses fixed columns and hover path disclosure
@@ -74,6 +92,11 @@ implementation:
     - auto-scan on season source selection when a valid selection exists
     - keep scan copy neutral and batch copy terse
     - batch run requires the main season title and year fields
+    - keep Save shared for now
+    - treat source discovery as an embedded helper inside the source select
+  notes:
+    - batch stays expanded after execution for now
+    - save split is deferred because it needs sqlite and API migration
 production_transfer:
   baseline_source: current desktop layout with compact review table
   target: DSM-hosted app shell
@@ -81,6 +104,7 @@ production_transfer:
     - no new domain entities
     - no hidden dependency on path display
     - batch review remains secondary to the single-season form until data exists
+    - batch remains expanded after execution for now
 polish_passes:
   - reduce row noise
   - keep hover access to full path
@@ -88,4 +112,7 @@ polish_passes:
   - shorten scan action copy
   - bind batch availability to the main season fields
   - move batch form context into the section header
-open_questions: []
+  - compress vertical chrome for the primary season surface
+  - reduce the visual weight of support surfaces
+open_questions:
+  - whether the single-season block should eventually be visually separated more strongly from batch review

@@ -11,8 +11,6 @@
   class="min-h-screen app-shell-page"
   data-run-token="__RUN_TOKEN__"
   data-root-torrents="__TORRENTS_ROOT__"
-  data-root-movies="__MOVIES_ROOT__"
-  data-root-tv="__TV_ROOT__"
   data-page-title-key="page.app.title"
 >
   <main class="mx-auto max-w-[72rem] px-5 py-5 md:py-6">
@@ -132,55 +130,15 @@
         </sl-card>
       </section>
 
-      <aside aria-label="Saved items and NAS browser" data-i18n-aria-label="saved_browser.aria" class="min-w-0 grid gap-y-5">
+      <aside aria-label="Saved items" data-i18n-aria-label="saved_browser.aria" class="min-w-0 grid gap-y-5">
         <sl-card class="glass-card">
           <h2 class="text-lg font-semibold text-slate-900" data-i18n="saved.title">Saved</h2>
           <p class="section-subheader" data-i18n="saved.subtitle">Quick form fill.</p>
           <ul id="saved_list" class="mt-3 w-full min-w-0 space-y-1 overflow-hidden rounded-2xl border border-slate-200 bg-white/80 p-3 text-sm"></ul>
         </sl-card>
-
-        <sl-card class="glass-card">
-          <h2 class="text-lg font-semibold text-slate-900" data-i18n="browse.title">Browse NAS</h2>
-          <p class="section-subheader" data-i18n="browse.subtitle">Choose a root and click through folders.</p>
-          <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <sl-select id="root" size="small">
-            <sl-option value="torrents" data-path="__TORRENTS_ROOT__" data-i18n="browse.root.torrents">Torrents</sl-option>
-            <sl-option value="movies" data-path="__MOVIES_ROOT__" data-i18n="browse.root.movies">Movies</sl-option>
-            <sl-option value="tv" data-path="__TV_ROOT__" data-i18n="browse.root.tv">TV Shows</sl-option>
-            </sl-select>
-            <sl-button id="browse" size="small" data-i18n="browse.list_folders">List folders</sl-button>
-          </div>
-          <div id="list_loading" class="mt-4 hidden w-full min-w-0 space-y-2 rounded-2xl border border-slate-200 bg-white/80 p-3 text-sm">
-            <sl-skeleton effect="sheen" class="block h-4 w-full"></sl-skeleton>
-            <sl-skeleton effect="sheen" class="block h-4 w-11/12"></sl-skeleton>
-            <sl-skeleton effect="sheen" class="block h-4 w-10/12"></sl-skeleton>
-            <sl-skeleton effect="sheen" class="block h-4 w-9/12"></sl-skeleton>
-            <sl-skeleton effect="sheen" class="block h-4 w-8/12"></sl-skeleton>
-          </div>
-          <ul id="list" class="mt-3 w-full min-w-0 space-y-1 overflow-auto rounded-2xl border border-slate-200 bg-white/80 p-3 text-sm"></ul>
-        </sl-card>
       </aside>
     </section>
   </main>
-
-  <template id="browse-row-template">
-    <li class="border-b border-slate-100 last:border-b-0 py-1.5 text-slate-800 min-w-0 overflow-hidden">
-      <div class="flex w-full items-center gap-2 min-w-0 overflow-hidden">
-        <div data-role="label" class="flex w-0 min-w-0 flex-1 items-center gap-2 overflow-hidden">
-          <sl-icon data-role="icon" class="flex-shrink-0" aria-hidden="true" library="default"></sl-icon>
-          <div data-role="name-host" class="flex min-w-0 flex-1 items-center overflow-hidden"></div>
-        </div>
-        <div data-role="actions" class="ml-2 flex items-center gap-2 text-xs flex-shrink-0">
-          <sl-button data-role="copy-btn" size="small" variant="text">
-            <sl-icon name="clipboard" class="text-emerald-600" aria-hidden="true" library="default"></sl-icon>
-          </sl-button>
-          <sl-button data-role="fill-btn" size="small" variant="text">
-            <sl-icon name="box-arrow-in-right" class="text-blue-600" aria-hidden="true" library="default"></sl-icon>
-          </sl-button>
-        </div>
-      </div>
-    </li>
-  </template>
 
   <template id="saved-row-template">
     <li class="border-b border-slate-100 last:border-b-0 py-1.5 text-slate-800 min-w-0 overflow-hidden">

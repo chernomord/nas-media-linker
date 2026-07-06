@@ -34,6 +34,8 @@ Architecture Decision Records in this repository capture stable product and UX d
 
 ## Current ADRs
 - [0001-season-linking-operators.md](./0001-season-linking-operators.md)
+- [0002-mode-scoped-progressive-disclosure.md](./0002-mode-scoped-progressive-disclosure.md)
+- [0003-season-linking-density-budget.md](./0003-season-linking-density-budget.md)
 
 ## Template
 - [template.md](./template.md)

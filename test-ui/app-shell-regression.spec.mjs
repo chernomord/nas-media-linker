@@ -10,78 +10,16 @@ async function setShoelaceValue(page, selector, value) {
   }, value);
 }
 
-test("browse list keeps long names truncated inside the card", async ({ page }) => {
+test("source discovery stays embedded and the standalone browse card is gone", async ({ page }) => {
   await page.goto("/");
 
   await expect(page.getByRole("heading", { name: "Quick NAS linking console" })).toBeVisible();
-
-  await setShoelaceValue(page, "#root", "movies");
-  await page.locator("#browse").click();
-
-  const longName = "A.Knight.of.the.Seven.Kingdoms.S01.2160p.2026.2160p.WEB-DL.HDR.H.265.Master5";
-  const row = page.locator("#list li").filter({ hasText: longName }).first();
-  await expect(row).toBeVisible();
-
-  const label = row.locator('[data-role="name"]').first();
-  await expect(label).toBeVisible();
-
-  const tooltipState = await label.evaluate((element) => {
-    const portal = document.getElementById("floating_tooltip_portal");
-    const tooltip = portal?.querySelector('[data-role="floating-tooltip"]');
-    return {
-      hasTitle: element.hasAttribute("title"),
-    portalId: portal?.id ?? "",
-    tooltipRole: tooltip?.getAttribute("data-role") ?? "",
-    tooltipHidden: Boolean(tooltip?.hidden),
-    };
-  });
-
-  const metrics = await label.evaluate((element) => {
-    const rowElement = element.closest("li");
-    const listElement = document.querySelector("#list");
-    const style = getComputedStyle(element);
-    const rowRect = rowElement?.getBoundingClientRect();
-    const listRect = listElement?.getBoundingClientRect();
-    return {
-      clientWidth: element.clientWidth,
-      scrollWidth: element.scrollWidth,
-      textOverflow: style.textOverflow,
-      whiteSpace: style.whiteSpace,
-      rowRight: rowRect?.right ?? 0,
-      listRight: listRect?.right ?? 0,
-    };
-  });
-
-  expect(tooltipState.hasTitle).toBe(false);
-  expect(tooltipState.portalId).toBe("floating_tooltip_portal");
-  expect(tooltipState.tooltipRole).toBe("floating-tooltip");
-  expect(tooltipState.tooltipHidden).toBe(true);
-  expect(metrics.textOverflow).toBe("ellipsis");
-  expect(metrics.whiteSpace).toBe("nowrap");
-  expect(metrics.scrollWidth).toBeGreaterThan(metrics.clientWidth);
-  expect(metrics.rowRight).toBeLessThanOrEqual(metrics.listRight + 1);
-  await expect(row.locator("sl-button")).toHaveCount(2);
-  await expect(row.locator("sl-button").last()).toBeVisible();
-});
-
-test("browse torrents file rows can fill the movie source uid", async ({ page }) => {
-  await page.goto("/");
-
-  await setShoelaceValue(page, "#root", "torrents");
-  await page.locator("#browse").click();
-
-  const fileName = "Standalone.Movie.2024.1080p.WEB-DL.H.265.mkv";
-  const row = page.locator("#list li").filter({ hasText: fileName }).first();
-  await expect(row).toBeVisible();
-
-  await expect(row.locator("sl-button")).toHaveCount(2);
-  await row.locator("sl-button").last().click();
-
-  const movieSourceValue = await page.locator("#m_src").evaluate((element) => element.value);
-  const seasonSourceValue = await page.locator("#s_src").evaluate((element) => element.value);
-
-  expect(movieSourceValue).toMatch(/^\d+:\d+$/);
-  expect(seasonSourceValue).toBe("");
+  await expect(page.locator("#browse")).toHaveCount(0);
+  await expect(page.locator("#root")).toHaveCount(0);
+  await page.waitForFunction(() => document.querySelectorAll("#s_src sl-option").length > 0);
+  const seasonOptionNames = await page.locator("#s_src sl-option").evaluateAll((options) => options.map((option) => option.textContent?.trim() || ""));
+  expect(seasonOptionNames.length).toBeGreaterThan(0);
+  expect(seasonOptionNames).toContain("Bundle Show");
 });
 
 test("season source selection auto-scans and mirrors the reset toggle", async ({ page }) => {
@@ -220,7 +158,6 @@ test("locale switch updates copy without a page reload", async ({ page }) => {
   await page.locator('[data-locale-switcher] [data-locale="ru"]').click();
 
   await expect(title).toHaveText("Быстрая консоль линковки NAS");
-  await expect(page.locator("#browse")).toHaveText("Показать папки");
   await expect(page.locator("#logout_btn")).toHaveText("Выйти");
 
   const marker = await page.evaluate(() => window.__uiRegressionMarker);
