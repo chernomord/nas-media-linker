@@ -263,6 +263,10 @@ sl-tab-panel::part(base) {
   overflow: visible;
 }
 
+sl-select::part(popup) {
+  z-index: 90;
+}
+
 .autocomplete-panel {
   position: fixed;
   z-index: 60;

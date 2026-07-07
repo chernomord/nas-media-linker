@@ -21,18 +21,29 @@ test("torrent source index uses backend uid and exact path mapping", () => {
   assert.equal(resolveTorrentSourceUidFromPath(`${ROOT}/The.Boys.S05`, index), "100:200");
 });
 
+test("torrent source index encodes path-like uids to avoid whitespace normalization", () => {
+  const index = createTorrentSourceIndex(ROOT, [
+    { name: "Bundle Show", type: "d" },
+  ]);
+
+  const uid = resolveTorrentSourceUidFromPath(`${ROOT}/Bundle Show`, index);
+  assert.equal(uid, `path:${encodeURIComponent(`${ROOT}/Bundle Show`)}`);
+  assert.equal(resolveTorrentSourcePathFromUid(uid, index), `${ROOT}/Bundle Show`);
+});
+
 test("torrent source lookup falls back from legacy saved paths to current uid", () => {
   const index = createTorrentSourceIndex(ROOT, [
-    { uid: "200:300", name: "Shingeki no Kyojin IV", type: "d" },
+    { name: "Shingeki no Kyojin IV", type: "d" },
   ]);
 
   const savedItem = {
-    srcPath: `${ROOT}/Shingeki_no_Kyojin_IV`,
+    srcPath: `${ROOT}/Shingeki no Kyojin IV`,
     sourceId: "",
   };
 
-  assert.equal(resolveTorrentSourceUidFromPath(savedItem.srcPath, index), "200:300");
-  assert.equal(resolveSavedTorrentSourceUid(savedItem, index), "200:300");
+  const uid = resolveSavedTorrentSourceUid(savedItem, index);
+  assert.equal(uid, `path:${encodeURIComponent(`${ROOT}/Shingeki no Kyojin IV`)}`);
+  assert.equal(resolveTorrentSourcePathFromUid(uid, index), `${ROOT}/Shingeki no Kyojin IV`);
 });
 
 test("saved sourceId takes precedence over legacy path heuristics", () => {

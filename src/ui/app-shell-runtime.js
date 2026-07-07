@@ -1107,18 +1107,12 @@ function initAppShell() {
       return "";
     }
     const summary = seasonPlan.summary || {};
-    const parts = [
-      t("season.plan.summary", {
-        folders: summary.folderCount || 0,
-        candidate: summary.candidateCount || 0,
-        ignored: summary.ignoredCount || 0,
-        ambiguous: summary.ambiguousCount || 0,
-      }),
-    ];
-    if ((summary.rootFileCount || 0) > 0) {
-      parts.push(t("season.plan.summary_files", { files: summary.rootFileCount }));
-    }
-    return parts.join(" · ");
+    return t("season.plan.summary", {
+      folders: summary.folderCount || 0,
+      candidate: summary.candidateCount || 0,
+      ignored: summary.ignoredCount || 0,
+      ambiguous: summary.ambiguousCount || 0,
+    });
   }
 
   function seasonPlanBatchContextText() {
@@ -1200,18 +1194,30 @@ function initAppShell() {
   }
 
   function renderSeasonPlan() {
+    const section = $("season_plan_section");
     const status = $("season_plan_status");
     const summary = $("season_plan_summary");
     const context = $("season_plan_context");
-    const empty = $("season_plan_empty");
     const wrap = $("season_plan_table_wrap");
     const rowsHost = $("season_plan_rows");
-    if (!status || !summary || !context || !empty || !wrap || !rowsHost) {
+    if (!section || !status || !summary || !context || !wrap || !rowsHost) {
+      return;
+    }
+
+    const hasRows = Boolean(seasonPlan && seasonPlan.rows.length > 0);
+    const shouldShowSection = seasonPlanBusy || Boolean(seasonPlanError) || hasRows;
+    section.classList.toggle("hidden", !shouldShowSection);
+    rowsHost.innerHTML = "";
+
+    if (!shouldShowSection) {
+      status.classList.add("hidden");
+      summary.textContent = "";
+      wrap.classList.add("hidden");
+      syncSeasonPlanButtons();
       return;
     }
 
     status.classList.remove("hidden");
-    rowsHost.innerHTML = "";
 
     if (seasonPlanBusy) {
       status.setAttribute("variant", "neutral");
@@ -1239,15 +1245,12 @@ function initAppShell() {
     summary.textContent = seasonPlan ? seasonPlanSummaryText() : "";
     context.textContent = seasonPlanBatchContextText();
 
-    if (!seasonPlan || seasonPlan.rows.length === 0) {
+    if (!hasRows) {
       wrap.classList.add("hidden");
-      empty.classList.remove("hidden");
-      empty.textContent = seasonPlan ? t("season.plan.no_rows") : t("season.plan.empty");
       syncSeasonPlanButtons();
       return;
     }
 
-    empty.classList.add("hidden");
     wrap.classList.remove("hidden");
 
     seasonPlan.rows.forEach((row, index) => {

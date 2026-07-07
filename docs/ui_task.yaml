@@ -41,14 +41,14 @@ grouping_variants:
       secondary: [saved_items]
 selected_grouping:
   id: left_primary_right_secondary
-  rationale: Keep the shared header and review table in the primary visual lane and prevent the sidebar from compressing scan results.
+  rationale: Keep the shared header in the primary lane, reveal batch only when it has data, and keep single-season as a compact fallback instead of a mixed block.
 layout.constraints:
   max_columns: 2
   max_nesting: 2
   primary_groups:
-    - season_header
-    - season_form
-    - season_review
+    - season_shared_context
+    - season_batch_review
+    - season_single_action
   secondary_groups:
     - saved_items
   scan_flow:
@@ -57,19 +57,21 @@ layout.constraints:
     - reveal batch review only when rows exist
     - keep batch expanded after execution for now
   density_rules:
-    - keep the single-season action above the fold on a standard mobile viewport
-    - keep batch review compact enough that it reads as subordinate state, not a second full form
+    - keep shared source/title/year above both actions
+    - keep batch review hidden until it has rows
+    - keep the single-season card compact enough to act as fallback state, not another full form
     - keep saved items visually lighter than the linking surfaces
   ordering_rules:
-    - shared title/year stay above both actions
-    - single-season action remains directly available
-    - batch review stays below the season form
+    - shared title/year stay in a dedicated shared-context card
+    - batch review appears before the single-season fallback when rows exist
+    - single-season action remains directly available below the batch surface
     - secondary surfaces should not look equal to the primary task surface
     - long identifiers should not widen the sidebar
     - destructive reset must be mirrored in both single and batch presentations
     - batch context should live in the batch header, not in the controls row
     - source discovery should stay inside the source dropdown, not as a separate browse surface
   anti_patterns:
+    - mixing shared context fields and single-season-only fields in one visual block
     - full paths inline in the review table
     - equal-width sidebar stealing space from review state
     - forcing a manual scan before any data can be shown
@@ -95,6 +97,7 @@ implementation:
     - keep Save shared for now
     - treat source discovery as an embedded helper inside the source select
   notes:
+    - batch section remains hidden until scan yields rows
     - batch stays expanded after execution for now
     - save split is deferred because it needs sqlite and API migration
 production_transfer:
@@ -103,7 +106,7 @@ production_transfer:
   invariants:
     - no new domain entities
     - no hidden dependency on path display
-    - batch review remains secondary to the single-season form until data exists
+    - batch review remains secondary until data exists, then becomes the primary surface above the single-season fallback
     - batch remains expanded after execution for now
 polish_passes:
   - reduce row noise
@@ -114,5 +117,5 @@ polish_passes:
   - move batch form context into the section header
   - compress vertical chrome for the primary season surface
   - reduce the visual weight of support surfaces
-open_questions:
-  - whether the single-season block should eventually be visually separated more strongly from batch review
+  - keep single-season fallback visually lighter than batch when rows exist
+open_questions: []

@@ -1,3 +1,21 @@
+const SOURCE_UID_PREFIX = "path:";
+
+function encodeTorrentSourceUid(value) {
+  return `${SOURCE_UID_PREFIX}${encodeURIComponent(String(value ?? ""))}`;
+}
+
+function decodeTorrentSourceUid(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw.startsWith(SOURCE_UID_PREFIX)) {
+    return "";
+  }
+  try {
+    return decodeURIComponent(raw.slice(SOURCE_UID_PREFIX.length));
+  } catch {
+    return "";
+  }
+}
+
 function normalizeLegacySourceName(value) {
   return String(value ?? "")
     .normalize("NFKC")
@@ -15,7 +33,8 @@ export function createTorrentSourceIndex(rootPath, items) {
 
   for (const item of Array.isArray(items) ? items : []) {
     const path = `${rootPath}/${item.name}`;
-    const uid = String(item.uid ?? path).trim() || path;
+    const rawUid = String(item.uid ?? path).trim() || path;
+    const uid = rawUid.includes(" ") ? encodeTorrentSourceUid(rawUid) : rawUid;
     const entry = {
       uid,
       path,
@@ -64,12 +83,22 @@ export function resolveTorrentSourcePathFromUid(uid, index) {
   if (!rawUid) {
     return "";
   }
-  return index?.byUid.get(rawUid)?.path || "";
+  return index?.byUid.get(rawUid)?.path || decodeTorrentSourceUid(rawUid);
 }
 
 export function resolveSavedTorrentSourceUid(savedItem, index) {
   const sourceId = String(savedItem?.sourceId ?? "").trim();
   if (sourceId) {
+    if (sourceId.includes("/")) {
+      const legacyPathUid = resolveTorrentSourceUidFromPath(sourceId, index);
+      if (legacyPathUid) {
+        return legacyPathUid;
+      }
+    }
+    const resolved = resolveTorrentSourcePathFromUid(sourceId, index);
+    if (resolved) {
+      return resolveTorrentSourceUidFromPath(resolved, index) || sourceId;
+    }
     return sourceId;
   }
   return resolveTorrentSourceUidFromPath(savedItem?.srcPath, index);

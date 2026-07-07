@@ -105,17 +105,19 @@ Related:
 | Header                                           |
 | Tabs                                             |
 |--------------------------------------------------|
-| Season form (dominant)                           |
+| Shared context                                   |
 |  - source                                        |
-|  - title/year/season                             |
+|  - title/year                                    |
+|                                                  |
+| Batch review (shown only when data exists)       |
+|  - scan / context / reset / run                  |
+|  - table of rows                                 |
+|                                                  |
+| Single-season fallback                           |
+|  - season                                        |
 |  - link / save / reset                           |
 |                                                  |
-| Batch review (subordinate)                       |
-|  - compact header + context                      |
-|  - rows only when scan exists                    |
-|                                                  |
 | Saved (light)                                    |
-| Browse (light)                                   |
 +--------------------------------------------------+
 ```
 
